@@ -11,7 +11,6 @@ def create_terrain_background(width, height, block_size):
     background_surface = pygame.Surface((width, height))
     
     # Simpan data grid di sini
-    # Kita gunakan dictionary { (grid_x, grid_y): "tipe_terrain" }
     terrain_grid = {}
     
     num_tiles_x = width // block_size
@@ -35,27 +34,30 @@ def create_terrain_background(width, height, block_size):
                 lacunarity=LACUNARITY
             )
             
-            # --- MODIFIKASI DI SINI ---
-            # Kita sesuaikan rentang nilai agar Grass lebih dominan
+            # --- MODIFIKASI: Menambahkan rentang untuk Air ---
+            # Air akan ada di dataran terendah (nilai noise terendah)
             
-            if noise_val < -0.4:  # Rentang Stone (Sangat kecil)
+            if noise_val < -0.5:  # Paling rendah: Air
+                tile_color = config.WATER_COLOR
+                tile_type = config.T_WATER
+            elif noise_val < -0.3: # Sedikit lebih tinggi: Stone
                 tile_color = config.STONE_COLOR
                 tile_type = config.T_STONE
-            elif noise_val < -0.1: # Rentang Dirt (Kecil)
+            elif noise_val < -0.0: # Transisi: Dirt
                 tile_color = config.DIRT_COLOR
                 tile_type = config.T_DIRT
-            elif noise_val < 0.6:  # Rentang Grass (Sangat besar)
+            elif noise_val < 0.6:  # Dominan: Rumput
                 tile_color = config.GRASS_COLOR
                 tile_type = config.T_GRASS
-            else: # Rentang Sand (Kecil, untuk nilai >= 0.6)
+            else: # Dataran tinggi: Pasir
                 tile_color = config.SAND_COLOR
                 tile_type = config.T_SAND
-            # ---------------------------
+            # -------------------------------------------------
             
             # Simpan tipe data ke grid
             terrain_grid[(x, y)] = tile_type
             
-            # Gambar ke surface (seperti sebelumnya)
+            # Gambar ke surface
             px = x * block_size
             py = y * block_size
             pygame.draw.rect(background_surface, tile_color, [px, py, block_size, block_size])
