@@ -11,14 +11,14 @@ WORLD_HEIGHT = DIS_HEIGHT * 3
 
 # --- Pengaturan Game ---
 SNAKE_BLOCK = 20
-SNAKE_SPEED = 15 # Ini sekarang menjadi "tick rate" atau FPS game
+SNAKE_SPEED = 15 
 CAMERA_SMOOTHING = 1.0
 
 # --- Pengaturan Level & Waktu ---
-LEVEL_UP_TIME = 20 # Waktu dalam detik untuk naik level
-ENEMY_SPAWN_PER_LEVEL = 1 # Tambah 1 cacing per level
-RUSHER_SPAWN_PER_LEVEL = 2 # Tambah 1 rusher setiap 2 level
-ENEMY_SPEED_INCREASE = 0.8 # Faktor pengali (delay * 0.8)
+LEVEL_UP_TIME = 20
+ENEMY_SPAWN_PER_LEVEL = 1
+RUSHER_SPAWN_PER_LEVEL = 2
+ENEMY_SPEED_INCREASE = 0.8
 
 # --- Pengaturan Musuh (Cacing Lambat) ---
 NUM_ENEMIES = 3
@@ -34,8 +34,8 @@ RUSHER_MAX_LENGTH = 4
 RUSHER_TURN_CHANCE = 0.05 
 
 # --- Pengaturan Power-up Bom ---
-BOMB_SPAWN_TIME = 15 # Detik antara spawn bom
-BOMB_RADIUS_AFFECTED = 350 # Radius ledakan (pixel)
+BOMB_SPAWN_TIME = 15
+BOMB_RADIUS_AFFECTED = 350
 
 # --- Definisi Warna ---
 WHITE = (255, 255, 255)
@@ -53,7 +53,6 @@ GRASS_COLOR = (34, 139, 34)
 DIRT_COLOR = (139, 69, 19)
 SAND_COLOR = (244, 164, 96)
 STONE_COLOR = (128, 128, 128)
-# Gunakan warna BLUE untuk air
 WATER_COLOR = BLUE 
 
 # --- Tipe Terrain (untuk konsistensi) ---
@@ -61,19 +60,18 @@ T_STONE = "stone"
 T_DIRT = "dirt"
 T_GRASS = "grass"
 T_SAND = "sand"
-T_WATER = "water" # Konstanta untuk Air
+T_WATER = "water"
 
 # --- Pengaturan Kecepatan Terrain ---
-# (Angka = jumlah frame/tick per 1 gerakan.)
 TERRAIN_SPEEDS = {
-    T_GRASS: 1,  # Cepat
-    T_SAND: 1,   # Cepat
-    T_DIRT: 2,   # Lambat
-    T_STONE: 3,  # Sangat lambat
-    T_WATER: 4,  # Paling lambat (di air)
+    T_GRASS: 1,
+    T_SAND: 1,
+    T_DIRT: 2,
+    T_STONE: 3,
+    T_WATER: 4,
 }
 
-# --- BARU: Pemetaan Warna Partikel Terrain ---
+# --- Pemetaan Warna Partikel Terrain ---
 TERRAIN_PARTICLE_COLORS = {
     T_GRASS: GRASS_COLOR,
     T_SAND: SAND_COLOR,
@@ -82,9 +80,26 @@ TERRAIN_PARTICLE_COLORS = {
     T_WATER: WATER_COLOR
 }
 
+# --- BARU: Pengaturan Minimap ---
+# Ukuran (1/5 dari lebar layar)
+MINIMAP_WIDTH = DIS_WIDTH // 5 
+# Tinggi dihitung otomatis berdasarkan rasio aspek layar
+MINIMAP_HEIGHT = int((DIS_HEIGHT / DIS_WIDTH) * MINIMAP_WIDTH)
+# Posisi (Pojok kanan atas dengan padding 10px)
+MINIMAP_X_POS = DIS_WIDTH - MINIMAP_WIDTH - 10
+MINIMAP_Y_POS = 10
+MINIMAP_BORDER_WIDTH = 2
+MINIMAP_BLIP_SIZE = 3 # Ukuran (px) untuk titik pemain/musuh
+
+# Warna untuk titik (blip) di minimap
+MINIMAP_PLAYER_COLOR = WHITE
+MINIMAP_ENEMY_COLOR = ENEMY_COLOR
+MINIMAP_RUSHER_COLOR = RUSHER_COLOR
+MINIMAP_FOOD_COLOR = FOOD_COLOR
+MINIMAP_BOMB_COLOR = BOMB_COLOR
+
 # --- Font ---
 TITLE_FONT = pygame.font.SysFont("impact", 75) 
 FONT_STYLE = pygame.font.SysFont("bahnschrift", 25)
 SCORE_FONT = pygame.font.SysFont("comicsansms", 35)
-# Font untuk statistik (Waktu/Level)
 STATS_FONT = pygame.font.SysFont("consolas", 20)

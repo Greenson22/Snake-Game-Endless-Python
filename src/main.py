@@ -9,8 +9,8 @@ from . import camera
 from . import ui
 from . import enemy  
 from . import rusher 
-from . import bomb # Impor file bom
-from . import particle # Impor file partikel
+from . import bomb      # Impor file bom
+from . import particle  # Impor file partikel
 
 class Game:
     def __init__(self):
@@ -29,6 +29,24 @@ class Game:
         
         self.all_creatures = [] 
         self.particles = [] # Daftar untuk menampung partikel
+        
+        # --- BARU: Inisialisasi Minimap ---
+        self.minimap_width = config.MINIMAP_WIDTH
+        self.minimap_height = config.MINIMAP_HEIGHT
+        
+        # Buat gambar latar statis untuk minimap (hanya sekali)
+        self.minimap_background = pygame.transform.scale(
+            self.background, (self.minimap_width, self.minimap_height)
+        )
+        
+        # Simpan rasio untuk konversi koordinat
+        self.minimap_x_ratio = self.minimap_width / config.WORLD_WIDTH
+        self.minimap_y_ratio = self.minimap_height / config.WORLD_HEIGHT
+        
+        # Simpan posisi layar
+        self.minimap_x = config.MINIMAP_X_POS
+        self.minimap_y = config.MINIMAP_Y_POS
+        # ---------------------------------
         
         self.reset_game() 
 
@@ -199,7 +217,7 @@ class Game:
         # Ambil posisi kepala lagi (setelah kemungkinan bergerak)
         snake_head_x, snake_head_y = self.snake.get_head_pos()
         
-        # 3. Update Kamera dan Musuh
+        # 3. Update Kamera, Musuh, dan Partikel
         self.camera.update(snake_head_x, snake_head_y)
         
         for creature in self.all_creatures:
@@ -239,6 +257,56 @@ class Game:
                 self.bomb_powerup = None
                 self.last_bomb_spawn_time = self.game_time 
 
+    # --- FUNGSI BARU: Konversi koordinat ---
+    def _world_to_minimap(self, world_x, world_y):
+        """Mengkonversi koordinat dunia ke koordinat layar di dalam minimap."""
+        # Hitung posisi lokal di dalam minimap
+        local_x = int(world_x * self.minimap_x_ratio)
+        local_y = int(world_y * self.minimap_y_ratio)
+        
+        # Tambahkan offset layar minimap
+        return (self.minimap_x + local_x, self.minimap_y + local_y)
+
+    # --- FUNGSI BARU: Menggambar minimap ---
+    def _draw_minimap(self):
+        """Menggambar background minimap dan semua blip entitas."""
+        
+        # 1. Gambar background minimap yang sudah di-scale
+        self.screen.blit(self.minimap_background, (self.minimap_x, self.minimap_y))
+        
+        # 2. Gambar blip (titik) untuk entitas
+        blip_size = (config.MINIMAP_BLIP_SIZE, config.MINIMAP_BLIP_SIZE)
+        
+        # a. Makanan
+        food_pos = self._world_to_minimap(self.food.x, self.food.y)
+        pygame.draw.rect(self.screen, config.MINIMAP_FOOD_COLOR, (food_pos, blip_size))
+        
+        # b. Bom
+        if self.bomb_powerup:
+            bomb_pos = self._world_to_minimap(self.bomb_powerup.x, self.bomb_powerup.y)
+            pygame.draw.rect(self.screen, config.MINIMAP_BOMB_COLOR, (bomb_pos, blip_size))
+
+        # c. Musuh (Cacing dan Rusher)
+        for creature in self.all_creatures:
+            creature_pos = self._world_to_minimap(creature.head[0], creature.head[1])
+            # Tentukan warna blip berdasarkan tipe musuh
+            color = config.MINIMAP_ENEMY_COLOR
+            if isinstance(creature, rusher.Rusher):
+                color = config.MINIMAP_RUSHER_COLOR
+            pygame.draw.rect(self.screen, color, (creature_pos, blip_size))
+            
+        # d. Pemain (Ular) - Gambar terakhir agar di atas
+        player_pos = self._world_to_minimap(self.snake.head[0], self.snake.head[1])
+        pygame.draw.rect(self.screen, config.MINIMAP_PLAYER_COLOR, (player_pos, blip_size))
+
+        # 3. Gambar border/bingkai minimap
+        pygame.draw.rect(
+            self.screen, 
+            config.WHITE, # Warna border
+            (self.minimap_x, self.minimap_y, self.minimap_width, self.minimap_height),
+            config.MINIMAP_BORDER_WIDTH
+        )
+
     def draw(self):
         """
         Menggambar semua elemen game ke layar.
@@ -274,6 +342,9 @@ class Game:
             # UI Saat bermain (Skor, Waktu, Level)
             ui.draw_score(self.screen, self.score)
             ui.draw_game_stats(self.screen, self.game_time, self.level)
+            
+            # Panggil fungsi gambar minimap
+            self._draw_minimap()
         
         # 3. Update layar
         pygame.display.update()

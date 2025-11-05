@@ -1,15 +1,15 @@
-# src/ui.py
 import pygame
 from . import config
 
 def draw_score(surface, score):
     """Menampilkan skor di layar (koordinat layar tetap)."""
     value = config.SCORE_FONT.render("Skor: " + str(score), True, config.YELLOW)
-    surface.blit(value, [10, 10]) # Beri sedikit padding
+    # Posisi tetap di [10, 10]
+    surface.blit(value, [10, 10])
 
-# --- FUNGSI BARU ---
+
 def draw_game_stats(surface, game_time, level):
-    """Menampilkan Waktu dan Level di pojok kanan atas."""
+    """Menampilkan Waktu dan Level di pojok kiri atas (di bawah Skor)."""
     
     # Format Waktu (MM:SS)
     minutes = game_time // 60
@@ -23,23 +23,24 @@ def draw_game_stats(surface, game_time, level):
     time_text = config.STATS_FONT.render(time_str, True, config.WHITE)
     level_text = config.STATS_FONT.render(level_str, True, config.WHITE)
     
-    # Posisi (Pojok Kanan Atas)
+    # --- MODIFIKASI POSISI ---
+    # Pindah dari 'topright' ke 'topleft', di bawah skor
+    # Skor ada di y=10, tinggi font skor ~35. Kita mulai di y=50.
     time_rect = time_text.get_rect(
-        topright=(config.DIS_WIDTH - 10, 10)
+        topleft=(10, 50)
     )
     level_rect = level_text.get_rect(
-        topright=(config.DIS_WIDTH - 10, 10 + time_rect.height + 5)
+        topleft=(10, 50 + time_rect.height + 5)
     )
+    # --------------------------
     
     surface.blit(time_text, time_rect)
     surface.blit(level_text, level_rect)
 
 
-# --- FUNGSI DIMODIFIKASI ---
 def draw_game_over_overlay(surface, score, level, game_time):
     """
     Menggambar overlay semi-transparan dan UI 'Game Over' di atas layar.
-    (Sekarang juga menerima level dan waktu)
     """
     
     overlay = pygame.Surface(
@@ -48,10 +49,12 @@ def draw_game_over_overlay(surface, score, level, game_time):
     overlay.fill((0, 0, 0, 150)) 
     surface.blit(overlay, (0, 0)) 
     
+    # ... (Sisa fungsi ini tidak perlu diubah) ...
+    
     # 2. Gambar Teks "GAME OVER"
     title_text = config.TITLE_FONT.render("GAME OVER", True, config.FOOD_COLOR)
     title_rect = title_text.get_rect(
-        center=(config.DIS_WIDTH / 2, config.DIS_HEIGHT / 4) # Sedikit ke atas
+        center=(config.DIS_WIDTH / 2, config.DIS_HEIGHT / 4)
     )
     surface.blit(title_text, title_rect)
     
@@ -87,6 +90,6 @@ def draw_game_over_overlay(surface, score, level, game_time):
         "Tekan 'C' untuk Main Lagi  |  'Q' untuk Keluar", True, config.WHITE
     )
     instr_rect = instr_text.get_rect(
-        center=(config.DIS_WIDTH / 2, config.DIS_HEIGHT * 0.85) # Sedikit ke bawah
+        center=(config.DIS_WIDTH / 2, config.DIS_HEIGHT * 0.85)
     )
     surface.blit(instr_text, instr_rect)
