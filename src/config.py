@@ -1,4 +1,3 @@
-# src/config.py
 import pygame
 
 # Inisialisasi modul font lebih awal
@@ -12,8 +11,8 @@ WORLD_HEIGHT = DIS_HEIGHT * 3
 
 # --- Pengaturan Game ---
 SNAKE_BLOCK = 20
-SNAKE_SPEED = 15
-CAMERA_SMOOTHING = 1.0 
+SNAKE_SPEED = 15 # Ini sekarang menjadi "tick rate" atau FPS game
+CAMERA_SMOOTHING = 1.0
 
 # --- BARU: Pengaturan Level & Waktu ---
 LEVEL_UP_TIME = 20 # Waktu dalam detik untuk naik level
@@ -54,6 +53,22 @@ GRASS_COLOR = (34, 139, 34)
 DIRT_COLOR = (139, 69, 19)
 SAND_COLOR = (244, 164, 96)
 STONE_COLOR = (128, 128, 128)
+
+# --- BARU: Tipe Terrain (untuk konsistensi) ---
+T_STONE = "stone"
+T_DIRT = "dirt"
+T_GRASS = "grass"
+T_SAND = "sand"
+
+# --- BARU: Pengaturan Kecepatan Terrain ---
+# (Angka = jumlah frame/tick per 1 gerakan.)
+# (1 = normal/cepat, 2 = 50% speed, 3 = 33% speed)
+TERRAIN_SPEEDS = {
+    T_GRASS: 1,  # Cepat (bergerak setiap 1 tick)
+    T_SAND: 1,   # Cepat (bergerak setiap 1 tick)
+    T_DIRT: 2,   # Lambat (bergerak setiap 2 tick)
+    T_STONE: 3,  # Sangat lambat (bergerak setiap 3 tick)
+}
 
 # --- Font ---
 TITLE_FONT = pygame.font.SysFont("impact", 75) 
