@@ -98,18 +98,27 @@ class Game:
             # 4. Cek Aturan Makanan
             food_rule = config.BIOME_FOOD_RULES.get(tile_type)
             
+            # --- LOGIKA DIPERBARUI: Cek Probabilitas ---
             if food_rule is not None:
-                # Sukses! Ditemukan tile yang valid (misal: Rumput, Pasir)
-                food_color, food_score = food_rule
+                # 1. Ambil 3 nilai (termasuk probabilitas)
+                food_color, food_score, spawn_chance = food_rule
                 
-                # Buat objek Food baru dan tambahkan ke list
-                new_food = food.Food(spawn_x, spawn_y, food_color, food_score)
-                self.foods.append(new_food)
+                # 2. Lakukan 'lemparan dadu'
+                if random.random() < spawn_chance:
+                    # Sukses! (Misal: 0.1 < 0.2 di Rumput)
+                    # Buat objek Food baru dan tambahkan ke list
+                    new_food = food.Food(spawn_x, spawn_y, food_color, food_score)
+                    self.foods.append(new_food)
+                    return # Hentikan fungsi
                 
-                return # Hentikan fungsi
+                # Jika gagal (Misal: 0.5 > 0.2 di Rumput),
+                # 'if' ini dilewati, dan loop 'while' berlanjut
+                # untuk mencari titik baru.
+            
+            # Jika food_rule == None (misal: Air),
+            # 'if' utama dilewati, dan loop 'while' berlanjut.
 
-        # Jika loop gagal 50x (misal: pemain di tengah lautan)
-        # print("Gagal spawn makanan, mungkin di lautan?")
+        # Jika loop gagal 50x
         pass
 
     # --- FUNGSI BARU: Menjaga populasi makanan ---
@@ -449,7 +458,9 @@ class Game:
         
         for creature in self.all_creatures:
             creature.draw(self.screen, cam_x, cam_y)
-        self.snake.draw(self.screen, cam_x, cam_y)
+            
+        # --- PERBAIKAN TYPO DI SINI ---
+        self.snake.draw(self.screen, cam_x, cam_y) # Diubah dari cam_m ke cam_y
         
         # 3. Logika UI
         if self.game_over:

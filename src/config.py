@@ -70,10 +70,12 @@ RUSHER_COLOR = (255, 0, 255)
 BOMB_COLOR = (100, 100, 100)
 
 # --- Warna Makanan (BARU) ---
-FOOD_APPLE_COLOR = (213, 50, 80) # Apel (default)
+FOOD_APPLE_COLOR = (213, 50, 80) # Apel (Rumput)
 FOOD_BERRY_COLOR = (100, 0, 200) # Berry (Hutan)
 FOOD_CACTUS_COLOR = (255, 165, 0) # Kaktus (Gurun)
 FOOD_MUSHROOM_COLOR = (150, 75, 0) # Jamur (Tanah)
+FOOD_CRYSTAL_COLOR = (200, 230, 255) # Kristal (Batu)
+FOOD_ICE_BERRY_COLOR = (0, 200, 255) # Berry Es (Salju)
 
 # --- Warna Terrain ---
 GRASS_COLOR = (34, 139, 34)
@@ -95,19 +97,24 @@ T_SNOW = "snow"
 T_DEEP_GRASS = "deep_grass" 
 T_SCORCHED = "scorched"
 
-# --- BARU: Aturan Spawn Makanan Bioma ---
-# Format: TIPE_TERRAIN: (WARNA_MAKANAN, SKOR)
-# 'None' berarti tidak ada makanan yang bisa spawn di tile itu
+# --- BARU: Aturan Spawn Makanan Bioma (dengan Probabilitas) ---
+# Format: TIPE_TERRAIN: (WARNA_MAKANAN, SKOR, PROBABILITAS_SPAWN)
+# Probabilitas 1.0 = 100% (jika tile dipilih)
+# Probabilitas 0.2 = 20% (jika tile dipilih)
 BIOME_FOOD_RULES = {
-    T_GRASS: (FOOD_APPLE_COLOR, 10),
-    T_DEEP_GRASS: (FOOD_BERRY_COLOR, 15),
-    T_SAND: (FOOD_CACTUS_COLOR, 20),
-    T_DIRT: (FOOD_MUSHROOM_COLOR, 10),
+    # Terrain Cepat (Spawn Jarang)
+    T_GRASS: (FOOD_APPLE_COLOR, 10, 0.2), # 20%
+    T_DEEP_GRASS: (FOOD_BERRY_COLOR, 15, 0.3), # 30%
+    T_SAND: (FOOD_CACTUS_COLOR, 20, 0.2), # 20%
+
+    # Terrain Lambat (Spawn Sering)
+    T_DIRT: (FOOD_MUSHROOM_COLOR, 10, 0.9), # 90%
+    T_SCORCHED: (FOOD_MUSHROOM_COLOR, 15, 0.9), # 90% (Pakai jamur juga)
+    T_STONE: (FOOD_CRYSTAL_COLOR, 25, 0.8), # 80% (Skor tinggi!)
+    T_SNOW: (FOOD_ICE_BERRY_COLOR, 20, 1.0), # 100%
     
-    T_STONE: None,
-    T_SNOW: None,
+    # Terrain Invalid
     T_WATER: None,
-    T_SCORCHED: None,
 }
 
 # --- Pengaturan Kecepatan Terrain ---
