@@ -30,7 +30,7 @@ SNAKE_SPEED = 15 # Ini sekarang menjadi "tick rate" atau FPS game
 CAMERA_SMOOTHING = 1.0
 
 # --- BARU: Pengaturan Makanan ---
-MAX_FOOD_COUNT = 40 # Dinaikkan dari 30
+MAX_FOOD_COUNT = 40 # Jumlah maksimum makanan di dunia pada satu waktu
 FOOD_SCORE_BASE = 10 # Skor dasar (skor 10 = tumbuh 1 segmen)
 
 # --- Pengaturan Level & Waktu ---
@@ -64,12 +64,29 @@ YELLOW = (255, 255, 102)
 BLACK = (0, 0, 0)
 BLUE = (50, 153, 213)
 
-SNAKE_COLOR = (0, 200, 0) 
+# --- BARU: Pengaturan Ular ---
+SNAKE_COLOR = (0, 200, 0) # Warna Dasar (Tier 0)
+SNAKE_MAX_LENGTH = 12 # Batas panjang maksimal
+
+# --- BARU: DAFTAR WARNA PRESTISE (Tier 1 dan seterusnya) ---
+SNAKE_PRESTIGE_COLORS = [
+    (255, 215, 0),    # Tier 1: Emas
+    (192, 192, 192),  # Tier 2: Perak
+    (220, 20, 60),    # Tier 3: Rubi (Merah)
+    (0, 71, 171),     # Tier 4: Safir (Biru)
+    (153, 50, 204),   # Tier 5: Amethyst (Ungu)
+    (0, 255, 127),    # Tier 6: Zamrud (Hijau Terang)
+    (255, 127, 80),   # Tier 7: Oranye Api
+    (255, 255, 255)   # Tier 8: Berlian (Putih)
+    # Anda bisa menambah warna sebanyak yang Anda mau di sini
+]
+
+
 ENEMY_COLOR = (255, 100, 0) 
 RUSHER_COLOR = (255, 0, 255) 
 BOMB_COLOR = (100, 100, 100)
 
-# --- Warna Makanan (BARU) ---
+# --- Warna Makanan ---
 FOOD_APPLE_COLOR = (213, 50, 80) # Apel (Rumput)
 FOOD_BERRY_COLOR = (100, 0, 200) # Berry (Hutan)
 FOOD_CACTUS_COLOR = (255, 165, 0) # Kaktus (Gurun)
