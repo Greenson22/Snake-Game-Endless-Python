@@ -86,20 +86,27 @@ TERRAIN_PARTICLE_COLORS = {
     T_WATER: WATER_COLOR
 }
 
-# --- PENGATURAN MINIMAP (DINONAKTIFKAN) ---
-# Minimap statis tidak berfungsi dengan dunia tak terbatas.
-# Fitur ini perlu dibangun ulang dari awal (secara dinamis).
-# MINIMAP_WIDTH = DIS_WIDTH // 5 
-# MINIMAP_HEIGHT = int((DIS_HEIGHT / DIS_WIDTH) * MINIMAP_WIDTH)
-# MINIMAP_X_POS = DIS_WIDTH - MINIMAP_WIDTH - 10
-# MINIMAP_Y_POS = 10
-# MINIMAP_BORDER_WIDTH = 2
-# MINIMAP_BLIP_SIZE = 3 
-# MINIMAP_PLAYER_COLOR = WHITE
-# MINIMAP_ENEMY_COLOR = ENEMY_COLOR
-# MINIMAP_RUSHER_COLOR = RUSHER_COLOR
-# MINIMAP_FOOD_COLOR = FOOD_COLOR
-# MINIMAP_BOMB_COLOR = BOMB_COLOR
+# --- BARU: Pengaturan Minimap (DINAMIS/RADAR) ---
+MINIMAP_WIDTH = 150  # Ukuran kotak minimap (pixel)
+MINIMAP_HEIGHT = 150 # Ukuran kotak minimap (pixel)
+MINIMAP_X_POS = DIS_WIDTH - MINIMAP_WIDTH - 10 # Pojok kanan atas
+MINIMAP_Y_POS = 10
+MINIMAP_BORDER_WIDTH = 2
+
+# Radius pandang (seberapa jauh 'pixel dunia' yang diwakili oleh radius minimap)
+MINIMAP_VIEW_RADIUS_WORLD = 1000 
+MINIMAP_RADIUS_PIXELS = MINIMAP_WIDTH // 2 # Radius minimap di layar
+
+# Warna untuk 'blip' (titik)
+MINIMAP_PLAYER_COLOR = WHITE
+MINIMAP_ENEMY_COLOR = ENEMY_COLOR
+MINIMAP_RUSHER_COLOR = RUSHER_COLOR
+MINIMAP_FOOD_COLOR = FOOD_COLOR
+MINIMAP_BOMB_COLOR = BOMB_COLOR
+
+# Latar belakang minimap
+MINIMAP_BG_COLOR = (0, 0, 0) # Hitam
+MINIMAP_BG_ALPHA = 120 # Semi-transparan
 
 # --- Font ---
 TITLE_FONT = pygame.font.SysFont("impact", 75) 

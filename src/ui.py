@@ -4,9 +4,7 @@ from . import config
 def draw_score(surface, score):
     """Menampilkan skor di layar (koordinat layar tetap)."""
     value = config.SCORE_FONT.render("Skor: " + str(score), True, config.YELLOW)
-    # Posisi tetap di [10, 10]
-    surface.blit(value, [10, 10])
-
+    surface.blit(value, [10, 10]) # Beri sedikit padding
 
 def draw_game_stats(surface, game_time, level):
     """Menampilkan Waktu dan Level di pojok kiri atas (di bawah Skor)."""
@@ -23,9 +21,8 @@ def draw_game_stats(surface, game_time, level):
     time_text = config.STATS_FONT.render(time_str, True, config.WHITE)
     level_text = config.STATS_FONT.render(level_str, True, config.WHITE)
     
-    # --- MODIFIKASI POSISI ---
-    # Pindah dari 'topright' ke 'topleft', di bawah skor
-    # Skor ada di y=10, tinggi font skor ~35. Kita mulai di y=50.
+    # --- Posisi di KIRI ATAS ---
+    # Dipindahkan agar tidak bertabrakan dengan minimap
     time_rect = time_text.get_rect(
         topleft=(10, 50)
     )
@@ -48,8 +45,6 @@ def draw_game_over_overlay(surface, score, level, game_time):
     )
     overlay.fill((0, 0, 0, 150)) 
     surface.blit(overlay, (0, 0)) 
-    
-    # ... (Sisa fungsi ini tidak perlu diubah) ...
     
     # 2. Gambar Teks "GAME OVER"
     title_text = config.TITLE_FONT.render("GAME OVER", True, config.FOOD_COLOR)
