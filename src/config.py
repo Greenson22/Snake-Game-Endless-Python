@@ -97,6 +97,10 @@ MINIMAP_BORDER_WIDTH = 2
 MINIMAP_VIEW_RADIUS_WORLD = 1000 
 MINIMAP_RADIUS_PIXELS = MINIMAP_WIDTH // 2 # Radius minimap di layar
 
+# --- BARU DITAMBAHKAN ---
+MINIMAP_TERRAIN_SAMPLES = 30 # Detail terrain di minimap (Grid 30x30)
+# -------------------------
+
 # Warna untuk 'blip' (titik)
 MINIMAP_PLAYER_COLOR = WHITE
 MINIMAP_ENEMY_COLOR = ENEMY_COLOR

@@ -41,12 +41,7 @@ class Game:
         self.minimap_surface = pygame.Surface(
             (config.MINIMAP_WIDTH, config.MINIMAP_HEIGHT), pygame.SRCALPHA
         )
-        self.minimap_surface.fill(
-            (config.MINIMAP_BG_COLOR[0], 
-             config.MINIMAP_BG_COLOR[1], 
-             config.MINIMAP_BG_COLOR[2], 
-             config.MINIMAP_BG_ALPHA)
-        )
+        # (Kita akan mengisi warnanya di _draw_minimap agar dinamis)
         # -------------------------------------------
         
         self.reset_game() 
@@ -274,12 +269,65 @@ class Game:
 
     # --- FUNGSI BARU/DITULIS ULANG: Menggambar minimap (Radar) ---
     def _draw_minimap(self, player_x, player_y):
-        """Menggambar radar minimap dinamis."""
+        """Menggambar radar minimap dinamis, TERMASUK TERRAIN."""
         
-        # 1. Gambar latar belakang minimap (surface transparan)
+        # --- Bagian 1: Menggambar Latar (Terrain) ke Surface ---
+        
+        # 1. Fill background (semi-transparan black)
+        # Ini membersihkan frame sebelumnya
+        self.minimap_surface.fill(
+            (config.MINIMAP_BG_COLOR[0], 
+             config.MINIMAP_BG_COLOR[1], 
+             config.MINIMAP_BG_COLOR[2], 
+             config.MINIMAP_BG_ALPHA)
+        )
+
+        # 2. Gambar Terrain (Sampling)
+        color_map = config.TERRAIN_PARTICLE_COLORS 
+        sample_grid_size = config.MINIMAP_TERRAIN_SAMPLES
+        
+        # Ukuran satu "pixel" terrain di minimap
+        pixel_size_x = self.minimap_rect.width / sample_grid_size
+        pixel_size_y = self.minimap_rect.height / sample_grid_size
+        
+        world_radius = config.MINIMAP_VIEW_RADIUS_WORLD
+        world_diameter = world_radius * 2
+        world_step = world_diameter / sample_grid_size
+
+        start_world_x = player_x - world_radius
+        start_world_y = player_y - world_radius
+
+        for y_step in range(sample_grid_size):
+            for x_step in range(sample_grid_size):
+                # 1. Hitung Posisi Dunia untuk di-sample
+                current_world_x = start_world_x + (x_step * world_step)
+                current_world_y = start_world_y + (y_step * world_step)
+                
+                # 2. Ambil Tipe Terrain
+                tile_type = self.world.get_tile_type_at_world_pos(
+                    current_world_x, current_world_y
+                )
+                
+                # 3. Ambil Warna Terrain
+                tile_color = color_map.get(tile_type, config.GRASS_COLOR)
+                
+                # 4. Hitung Posisi Gambar di Minimap (relative to minimap_surface)
+                draw_x = x_step * pixel_size_x
+                draw_y = y_step * pixel_size_y
+                
+                # 5. Gambar ke surface minimap
+                pygame.draw.rect(
+                    self.minimap_surface,
+                    tile_color,
+                    (draw_x, draw_y, math.ceil(pixel_size_x), math.ceil(pixel_size_y))
+                )
+        
+        # --- Bagian 2: Menggambar ke Layar (Screen) ---
+
+        # 3. Blit surface (terrain+latar) ke layar
         self.screen.blit(self.minimap_surface, self.minimap_rect.topleft)
         
-        # 2. Gambar border
+        # 4. Gambar border (di atas terrain)
         pygame.draw.rect(
             self.screen, 
             config.WHITE, 
@@ -287,12 +335,12 @@ class Game:
             config.MINIMAP_BORDER_WIDTH
         )
         
-        # 3. Hitung pusat minimap (tempat pemain digambar)
+        # 5. Hitung pusat minimap (tempat pemain digambar)
         map_center_x = self.minimap_rect.centerx
         map_center_y = self.minimap_rect.centery
         
-        # 4. Gambar Blip
-        world_radius = config.MINIMAP_VIEW_RADIUS_WORLD
+        # 6. Gambar Blip (di atas terrain, di atas border)
+        world_radius_blip = config.MINIMAP_VIEW_RADIUS_WORLD
         map_radius = config.MINIMAP_RADIUS_PIXELS
 
         def draw_blip(world_x, world_y, color):
@@ -301,17 +349,16 @@ class Game:
             delta_y = world_y - player_y
             dist = math.sqrt(delta_x**2 + delta_y**2)
             
-            # Jika di luar jangkauan, jangan gambar (opsional, tapi lebih bersih)
-            if dist > world_radius:
-                 # Jepit ke tepi
+            # Jika di luar jangkauan, jepit ke tepi
+            if dist > world_radius_blip:
                  norm_x = delta_x / dist
                  norm_y = delta_y / dist
                  blip_x = map_center_x + (norm_x * map_radius)
                  blip_y = map_center_y + (norm_y * map_radius)
             else:
                  # Jika di dalam jangkauan
-                 norm_x = delta_x / world_radius
-                 norm_y = delta_y / world_radius
+                 norm_x = delta_x / world_radius_blip
+                 norm_y = delta_y / world_radius_blip
                  blip_x = map_center_x + (norm_x * map_radius)
                  blip_y = map_center_y + (norm_y * map_radius)
 
@@ -319,6 +366,7 @@ class Game:
             blip_x = max(self.minimap_rect.left + 2, min(self.minimap_rect.right - 2, blip_x))
             blip_y = max(self.minimap_rect.top + 2, min(self.minimap_rect.bottom - 2, blip_y))
             
+            # Menggambar blip ke LAYAR UTAMA (self.screen)
             pygame.draw.rect(self.screen, color, (blip_x, blip_y, 2, 2))
 
         # a. Gambar Makanan
@@ -337,7 +385,7 @@ class Game:
             
         # d. Gambar Pemain (selalu di tengah)
         pygame.draw.rect(
-            self.screen, 
+            self.screen, # Gambar ke layar utama
             config.MINIMAP_PLAYER_COLOR, 
             (map_center_x - 1, map_center_y - 1, 3, 3) # Sedikit lebih besar
         )
