@@ -1,18 +1,16 @@
-# src/terrain.py
 import pygame
 import noise
 import random
 # Menggunakan impor relatif dari dalam paket 'src'
 from . import config 
 
-# --- FUNGSI DIMODIFIKASI ---
 def create_terrain_background(width, height, block_size):
     """
     Membuat Surface background DAN data grid terrain.
     """
     background_surface = pygame.Surface((width, height))
     
-    # --- BARU: Simpan data grid di sini ---
+    # Simpan data grid di sini
     # Kita gunakan dictionary { (grid_x, grid_y): "tipe_terrain" }
     terrain_grid = {}
     
@@ -37,21 +35,24 @@ def create_terrain_background(width, height, block_size):
                 lacunarity=LACUNARITY
             )
             
-            # Tentukan warna DAN tipe data
-            if noise_val < -0.2:
+            # --- MODIFIKASI DI SINI ---
+            # Kita sesuaikan rentang nilai agar Grass lebih dominan
+            
+            if noise_val < -0.4:  # Rentang Stone (Sangat kecil)
                 tile_color = config.STONE_COLOR
                 tile_type = config.T_STONE
-            elif noise_val < 0.1:
+            elif noise_val < -0.1: # Rentang Dirt (Kecil)
                 tile_color = config.DIRT_COLOR
                 tile_type = config.T_DIRT
-            elif noise_val < 0.5:
+            elif noise_val < 0.6:  # Rentang Grass (Sangat besar)
                 tile_color = config.GRASS_COLOR
                 tile_type = config.T_GRASS
-            else:
+            else: # Rentang Sand (Kecil, untuk nilai >= 0.6)
                 tile_color = config.SAND_COLOR
                 tile_type = config.T_SAND
+            # ---------------------------
             
-            # --- BARU: Simpan tipe data ke grid ---
+            # Simpan tipe data ke grid
             terrain_grid[(x, y)] = tile_type
             
             # Gambar ke surface (seperti sebelumnya)
@@ -61,5 +62,5 @@ def create_terrain_background(width, height, block_size):
             
     print("Terrain map generated.")
     
-    # --- MODIFIKASI: Kembalikan KEDUA-nya ---
+    # Kembalikan KEDUA-nya
     return background_surface, terrain_grid
