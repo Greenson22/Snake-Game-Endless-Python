@@ -41,19 +41,19 @@ BOMB_RADIUS_AFFECTED = 350 # Radius ledakan (pixel)
 WHITE = (255, 255, 255)
 YELLOW = (255, 255, 102)
 BLACK = (0, 0, 0)
-BLUE = (50, 153, 213) # <- Pastikan warna ini ada (atau ganti nama jadi WATER_COLOR)
+BLUE = (50, 153, 213)
 
 SNAKE_COLOR = (0, 200, 0) 
 FOOD_COLOR = (213, 50, 80)
 ENEMY_COLOR = (255, 100, 0) 
 RUSHER_COLOR = (255, 0, 255) 
-BOMB_COLOR = (100, 100, 100) 
+BOMB_COLOR = (100, 100, 100)
 
 GRASS_COLOR = (34, 139, 34)
 DIRT_COLOR = (139, 69, 19)
 SAND_COLOR = (244, 164, 96)
 STONE_COLOR = (128, 128, 128)
-# BARU: Gunakan warna BLUE untuk air
+# Gunakan warna BLUE untuk air
 WATER_COLOR = BLUE 
 
 # --- Tipe Terrain (untuk konsistensi) ---
@@ -61,7 +61,7 @@ T_STONE = "stone"
 T_DIRT = "dirt"
 T_GRASS = "grass"
 T_SAND = "sand"
-T_WATER = "water" # BARU: Konstanta untuk Air
+T_WATER = "water" # Konstanta untuk Air
 
 # --- Pengaturan Kecepatan Terrain ---
 # (Angka = jumlah frame/tick per 1 gerakan.)
@@ -70,11 +70,21 @@ TERRAIN_SPEEDS = {
     T_SAND: 1,   # Cepat
     T_DIRT: 2,   # Lambat
     T_STONE: 3,  # Sangat lambat
-    T_WATER: 4,  # BARU: Paling lambat (di air)
+    T_WATER: 4,  # Paling lambat (di air)
+}
+
+# --- BARU: Pemetaan Warna Partikel Terrain ---
+TERRAIN_PARTICLE_COLORS = {
+    T_GRASS: GRASS_COLOR,
+    T_SAND: SAND_COLOR,
+    T_DIRT: DIRT_COLOR,
+    T_STONE: STONE_COLOR,
+    T_WATER: WATER_COLOR
 }
 
 # --- Font ---
 TITLE_FONT = pygame.font.SysFont("impact", 75) 
 FONT_STYLE = pygame.font.SysFont("bahnschrift", 25)
 SCORE_FONT = pygame.font.SysFont("comicsansms", 35)
+# Font untuk statistik (Waktu/Level)
 STATS_FONT = pygame.font.SysFont("consolas", 20)

@@ -9,7 +9,8 @@ from . import camera
 from . import ui
 from . import enemy  
 from . import rusher 
-from . import bomb # Impor file bom baru
+from . import bomb # Impor file bom
+from . import particle # Impor file partikel
 
 class Game:
     def __init__(self):
@@ -20,13 +21,14 @@ class Game:
         self.running = True
         self.game_over = False
         
-        # MODIFIKASI: Tangkap grid data terrain
+        # Tangkap grid data terrain
         self.background, self.terrain_grid = terrain.create_terrain_background(
             config.WORLD_WIDTH, config.WORLD_HEIGHT, config.SNAKE_BLOCK
         )
         self.camera = camera.Camera()
         
         self.all_creatures = [] 
+        self.particles = [] # Daftar untuk menampung partikel
         
         self.reset_game() 
 
@@ -71,11 +73,13 @@ class Game:
         # Pengaturan Kesulitan
         self.current_enemy_delay = config.ENEMY_MOVE_DELAY
         
-        # BARU: Timer untuk gerakan ular berbasis terrain
+        # Timer untuk gerakan ular berbasis terrain
         self.snake_move_timer = 0
         
         # Spawn musuh awal
         self.all_creatures = []
+        self.particles = [] # Kosongkan partikel saat reset
+        
         print(f"Game dimulai! Level {self.level}")
         
         for _ in range(config.NUM_ENEMIES):
@@ -177,6 +181,20 @@ class Game:
         if self.snake_move_timer >= move_delay:
             self.snake_move_timer = 0
             self.snake.move()
+            
+            # Spawn Partikel saat Ular Bergerak
+            part_color = config.TERRAIN_PARTICLE_COLORS.get(
+                current_terrain_type, config.GRASS_COLOR
+            )
+            
+            new_head_x, new_head_y = self.snake.get_head_pos()
+            
+            for _ in range(3): # Spawn 3 partikel
+                self.particles.append(particle.Particle(
+                    new_head_x + config.SNAKE_BLOCK // 2, # Tengah blok
+                    new_head_y + config.SNAKE_BLOCK // 2, # Tengah blok
+                    part_color
+                ))
         
         # Ambil posisi kepala lagi (setelah kemungkinan bergerak)
         snake_head_x, snake_head_y = self.snake.get_head_pos()
@@ -187,6 +205,9 @@ class Game:
         for creature in self.all_creatures:
             creature.update(snake_head_x, snake_head_y, self.all_creatures)
         
+        # Update semua partikel (dan hapus yang mati)
+        self.particles = [p for p in self.particles if p.update()]
+
         # 4. Cek Tabrakan (Game Over)
         if self.snake.check_collision_self() or self.snake.check_collision_walls():
             self.game_over = True
@@ -228,9 +249,15 @@ class Game:
         # 1. Gambar semua elemen game
         self.screen.blit(self.background, (0 - cam_x, 0 - cam_y))
         
+        # Gambar Partikel
+        for p in self.particles:
+            p.draw(self.screen, cam_x, cam_y)
+
+        # Gambar Bom (jika ada)
         if self.bomb_powerup:
             self.bomb_powerup.draw(self.screen, self.camera) 
             
+        # Gambar Makanan (dengan panah)
         self.food.draw(self.screen, self.camera, snake_head_x, snake_head_y)
         
         for creature in self.all_creatures:
