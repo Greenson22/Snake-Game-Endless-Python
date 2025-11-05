@@ -1,4 +1,5 @@
 import pygame
+import random # <-- Pastikan ini diimpor
 
 # Inisialisasi modul font lebih awal
 pygame.font.init()
@@ -10,7 +11,22 @@ DIS_HEIGHT = 600
 # --- BARU: Pengaturan Dunia (Chunk) ---
 SNAKE_BLOCK = 20  # Ukuran 1 tile
 CHUNK_SIZE = 16   # Ukuran 1 chunk (dalam tile) (16x16 tiles)
-# (WORLD_WIDTH dan WORLD_HEIGHT dihapus karena dunia tak terbatas)
+
+# --- PENGATURAN NOISE (Dipindahkan dari terrain.py agar terpusat) ---
+ELEVATION_SCALE = 0.05 
+ELEVATION_OCTAVES = 6
+ELEVATION_PERSISTENCE = 0.5
+ELEVATION_LACUNARITY = 2.0
+ELEVATION_BASE = random.randint(0, 1000)
+
+# --- BARU: PENGATURAN NOISE BIOMA ---
+# Gunakan SCALE kecil agar bioma berukuran besar
+TEMP_SCALE = 0.01
+MOISTURE_SCALE = 0.012
+
+TEMP_BASE = random.randint(1001, 2000)
+MOISTURE_BASE = random.randint(2001, 3000)
+# (Octave, dll bisa disamakan dengan elevation untuk simpelnya)
 
 # --- Pengaturan Game ---
 SNAKE_SPEED = 15 # Ini sekarang menjadi "tick rate" atau FPS game
@@ -61,12 +77,20 @@ SAND_COLOR = (244, 164, 96)
 STONE_COLOR = (128, 128, 128)
 WATER_COLOR = BLUE 
 
+# --- BARU: Definisi Warna Bioma ---
+SNOW_COLOR = (240, 240, 240)
+DEEP_GRASS_COLOR = (0, 100, 0) # Hutan Hujan
+SCORCHED_COLOR = (80, 80, 80) # (Tidak terpakai di logika baru, tapi bisa)
+
 # --- Tipe Terrain (untuk konsistensi) ---
 T_STONE = "stone"
 T_DIRT = "dirt"
 T_GRASS = "grass"
 T_SAND = "sand"
 T_WATER = "water"
+T_SNOW = "snow" # <-- BARU
+T_DEEP_GRASS = "deep_grass" # <-- BARU
+T_SCORCHED = "scorched" # <-- BARU (Opsional)
 
 # --- Pengaturan Kecepatan Terrain ---
 TERRAIN_SPEEDS = {
@@ -75,6 +99,9 @@ TERRAIN_SPEEDS = {
     T_DIRT: 2,
     T_STONE: 3,
     T_WATER: 4,
+    T_SNOW: 3, # <-- BARU (Salju = lambat seperti batu)
+    T_DEEP_GRASS: 1, # <-- BARU (Hutan hujan = cepat)
+    T_SCORCHED: 2, # <-- BARU
 }
 
 # --- Pemetaan Warna Partikel Terrain ---
@@ -83,7 +110,10 @@ TERRAIN_PARTICLE_COLORS = {
     T_SAND: SAND_COLOR,
     T_DIRT: DIRT_COLOR,
     T_STONE: STONE_COLOR,
-    T_WATER: WATER_COLOR
+    T_WATER: WATER_COLOR,
+    T_SNOW: SNOW_COLOR, # <-- BARU
+    T_DEEP_GRASS: DEEP_GRASS_COLOR, # <-- BARU
+    T_SCORCHED: SCORCHED_COLOR, # <-- BARU
 }
 
 # --- BARU: Pengaturan Minimap (DINAMIS/RADAR) ---
@@ -97,9 +127,7 @@ MINIMAP_BORDER_WIDTH = 2
 MINIMAP_VIEW_RADIUS_WORLD = 1000 
 MINIMAP_RADIUS_PIXELS = MINIMAP_WIDTH // 2 # Radius minimap di layar
 
-# --- BARU DITAMBAHKAN ---
 MINIMAP_TERRAIN_SAMPLES = 30 # Detail terrain di minimap (Grid 30x30)
-# -------------------------
 
 # Warna untuk 'blip' (titik)
 MINIMAP_PLAYER_COLOR = WHITE

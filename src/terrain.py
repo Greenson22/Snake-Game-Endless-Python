@@ -4,12 +4,55 @@ import noise
 import random
 from . import config 
 
-# --- PENGATURAN NOISE (tetap) ---
-SCALE = 0.05 
-OCTAVES = 6
-PERSISTENCE = 0.5
-LACUNARITY = 2.0
-BASE = random.randint(0, 1000)
+# --- PENGATURAN NOISE (DIHAPUS DARI SINI, PINDAH KE CONFIG) ---
+# SCALE = 0.05 
+# ... (dll) ...
+# BASE = random.randint(0, 1000)
+
+def _get_biome_tile(elevation, temperature, moisture):
+    """
+    Fungsi helper baru untuk menentukan tipe tile dan warna
+    berdasarkan 3 nilai noise.
+    (Nilai noise berkisar -1.0 s.d 1.0)
+    """
+    
+    # 1. Cek Ketinggian (Air dan Puncak Gunung)
+    if elevation < -0.5:
+        return config.T_WATER, config.WATER_COLOR
+    if elevation > 0.7:
+        return config.T_SNOW, config.SNOW_COLOR # Puncak gunung bersalju
+
+    # 2. Logika Bioma Utama (Iklim)
+    
+    # BIOMA DINGIN (Tundra / Tanah Beku)
+    if temperature < -0.3:
+        if moisture < 0.0:
+            return config.T_STONE, config.STONE_COLOR # Dingin + Kering = Batu
+        else:
+            return config.T_SNOW, config.SNOW_COLOR # Dingin + Basah = Salju/Tundra
+
+    # BIOMA PANAS (Gurun / Savana / Hutan Hujan)
+    elif temperature > 0.4:
+        if moisture < -0.2:
+            return config.T_SAND, config.SAND_COLOR # Panas + Sangat Kering = Gurun Pasir
+        elif moisture < 0.4:
+            return config.T_DIRT, config.DIRT_COLOR # Panas + Sedang = Savana (Tanah)
+        else:
+            return config.T_DEEP_GRASS, config.DEEP_GRASS_COLOR # Panas + Basah = Hutan Hujan
+            
+    # BIOMA SEDANG (Padang Rumput / Hutan Gugur)
+    else:
+        if moisture < -0.3:
+            return config.T_DIRT, config.DIRT_COLOR # Sedang + Kering = Tanah Coklat
+        elif moisture < 0.5:
+            return config.T_GRASS, config.GRASS_COLOR # Sedang + Sedang = Padang Rumput
+        else:
+            # (Bisa tambahkan hutan gugur, tapi kita pakai rumput saja)
+            return config.T_GRASS, config.GRASS_COLOR
+
+    # Fallback (seharusnya tidak terjadi)
+    return config.T_GRASS, config.GRASS_COLOR
+
 
 def generate_chunk_data_and_surface(cx, cy):
     """
@@ -30,44 +73,58 @@ def generate_chunk_data_and_surface(cx, cy):
     world_offset_x = cx * config.CHUNK_SIZE
     world_offset_y = cy * config.CHUNK_SIZE
     
+    # Ambil pengaturan noise dari config
+    octaves = config.ELEVATION_OCTAVES
+    persistence = config.ELEVATION_PERSISTENCE
+    lacunarity = config.ELEVATION_LACUNARITY
+    
     for y in range(config.CHUNK_SIZE):
         for x in range(config.CHUNK_SIZE):
             
             # --- PENTING: Hitung koordinat GLOBAL ---
-            # Ini memastikan noise-nya nyambung antar chunk
             global_x = world_offset_x + x
             global_y = world_offset_y + y
             
-            # Ambil nilai noise Pnoise
-            noise_val = noise.pnoise2(
-                (global_x * SCALE) + BASE, 
-                (global_y * SCALE) + BASE,
-                octaves=OCTAVES,
-                persistence=PERSISTENCE,
-                lacunarity=LACUNARITY
+            # 1. Ambil nilai noise ELEVASI (Ketinggian)
+            elevation_val = noise.pnoise2(
+                (global_x * config.ELEVATION_SCALE) + config.ELEVATION_BASE, 
+                (global_y * config.ELEVATION_SCALE) + config.ELEVATION_BASE,
+                octaves=octaves,
+                persistence=persistence,
+                lacunarity=lacunarity
             )
             
-            # Logika pewarnaan (sama seperti sebelumnya)
-            if noise_val < -0.5:
-                tile_color = config.WATER_COLOR
-                tile_type = config.T_WATER
-            elif noise_val < -0.3:
-                tile_color = config.STONE_COLOR
-                tile_type = config.T_STONE
-            elif noise_val < -0.0:
-                tile_color = config.DIRT_COLOR
-                tile_type = config.T_DIRT
-            elif noise_val < 0.6:
-                tile_color = config.GRASS_COLOR
-                tile_type = config.T_GRASS
-            else:
-                tile_color = config.SAND_COLOR
-                tile_type = config.T_SAND
+            # 2. Ambil nilai noise SUHU (Temperature)
+            temperature_val = noise.pnoise2(
+                (global_x * config.TEMP_SCALE) + config.TEMP_BASE, 
+                (global_y * config.TEMP_SCALE) + config.TEMP_BASE,
+                octaves=octaves,
+                persistence=persistence,
+                lacunarity=lacunarity
+            )
             
-            # 1. Simpan tipe data ke grid LOKAL
+            # 3. Ambil nilai noise KELEMBAPAN (Moisture)
+            moisture_val = noise.pnoise2(
+                (global_x * config.MOISTURE_SCALE) + config.MOISTURE_BASE, 
+                (global_y * config.MOISTURE_SCALE) + config.MOISTURE_BASE,
+                octaves=octaves,
+                persistence=persistence,
+                lacunarity=lacunarity
+            )
+
+            # --- LOGIKA PEWARNAAN LAMA DIHAPUS ---
+            # if noise_val < -0.5:
+            # ... (dst) ...
+            
+            # 4. Tentukan Tipe Tile berdasarkan 3 Nilai
+            tile_type, tile_color = _get_biome_tile(
+                elevation_val, temperature_val, moisture_val
+            )
+            
+            # 5. Simpan tipe data ke grid LOKAL
             terrain_data[(x, y)] = tile_type
             
-            # 2. Gambar ke surface LOKAL
+            # 6. Gambar ke surface LOKAL
             px = x * config.SNAKE_BLOCK
             py = y * config.SNAKE_BLOCK
             pygame.draw.rect(chunk_surface, tile_color, [px, py, config.SNAKE_BLOCK, config.SNAKE_BLOCK])
@@ -78,6 +135,7 @@ def generate_chunk_data_and_surface(cx, cy):
 def render_chunk_surface_from_data(chunk_data):
     """
     Membuat ulang Surface chunk dari data (misal: setelah load game).
+    (Diperbarui untuk menyertakan tile baru)
     """
     chunk_surface = pygame.Surface(
         (config.CHUNK_SIZE * config.SNAKE_BLOCK, 
@@ -85,12 +143,16 @@ def render_chunk_surface_from_data(chunk_data):
     )
     
     # Gunakan mapping warna dari config
+    # (Sekarang kita ambil dari TERRAIN_PARTICLE_COLORS agar konsisten)
     color_map = {
         config.T_WATER: config.WATER_COLOR,
         config.T_STONE: config.STONE_COLOR,
         config.T_DIRT: config.DIRT_COLOR,
         config.T_GRASS: config.GRASS_COLOR,
         config.T_SAND: config.SAND_COLOR,
+        config.T_SNOW: config.SNOW_COLOR, # <-- BARU
+        config.T_DEEP_GRASS: config.DEEP_GRASS_COLOR, # <-- BARU
+        config.T_SCORCHED: config.SCORCHED_COLOR, # <-- BARU
     }
     default_color = config.GRASS_COLOR
     
@@ -98,7 +160,11 @@ def render_chunk_surface_from_data(chunk_data):
         for x in range(config.CHUNK_SIZE):
             
             tile_type = chunk_data.get((x,y), config.T_GRASS)
-            tile_color = color_map.get(tile_type, default_color)
+            # Ambil warna dari color_map, ATAU dari particle_colors, ATAU default
+            tile_color = color_map.get(
+                tile_type, 
+                config.TERRAIN_PARTICLE_COLORS.get(tile_type, default_color)
+            )
             
             px = x * config.SNAKE_BLOCK
             py = y * config.SNAKE_BLOCK
