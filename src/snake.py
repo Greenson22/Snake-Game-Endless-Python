@@ -34,9 +34,13 @@ class Snake:
         if len(self.body) > self.length:
             del self.body[0]
 
-    def grow(self):
-        """Menambah panjang ular."""
-        self.length += 1
+    def grow(self, score_value):
+        """
+        Menambah panjang ular berdasarkan skor makanan.
+        Setiap FOOD_SCORE_BASE poin menambah 1 panjang.
+        """
+        growth_amount = max(1, (score_value // config.FOOD_SCORE_BASE))
+        self.length += growth_amount
 
     def check_collision_self(self):
         """Memeriksa apakah ular menabrak dirinya sendiri."""
@@ -44,10 +48,6 @@ class Snake:
             if segment == self.head:
                 return True
         return False
-
-    # --- FUNGSI INI DIHAPUS ---
-    # def check_collision_walls(self):
-    #     ...
 
     def draw(self, surface, camera_x, camera_y):
         """Menggambar ular ke layar, disesuaikan dengan kamera (dengan outline)."""

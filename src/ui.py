@@ -47,7 +47,8 @@ def draw_game_over_overlay(surface, score, level, game_time):
     surface.blit(overlay, (0, 0)) 
     
     # 2. Gambar Teks "GAME OVER"
-    title_text = config.TITLE_FONT.render("GAME OVER", True, config.FOOD_COLOR)
+    # --- PERBAIKAN: Menggunakan FOOD_APPLE_COLOR (warna merah) ---
+    title_text = config.TITLE_FONT.render("GAME OVER", True, config.FOOD_APPLE_COLOR)
     title_rect = title_text.get_rect(
         center=(config.DIS_WIDTH / 2, config.DIS_HEIGHT / 4)
     )

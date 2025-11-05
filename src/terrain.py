@@ -5,53 +5,55 @@ import random
 from . import config 
 
 # --- PENGATURAN NOISE (DIHAPUS DARI SINI, PINDAH KE CONFIG) ---
-# SCALE = 0.05 
-# ... (dll) ...
-# BASE = random.randint(0, 1000)
 
 def _get_biome_tile(elevation, temperature, moisture):
     """
     Fungsi helper baru untuk menentukan tipe tile dan warna
     berdasarkan 3 nilai noise.
     (Nilai noise berkisar -1.0 s.d 1.0)
+    
+    --- VERSI DIPERBARUI UNTUK KESEIMBANGAN BIOMA ---
     """
     
     # 1. Cek Ketinggian (Air dan Puncak Gunung)
     if elevation < -0.5:
         return config.T_WATER, config.WATER_COLOR
     if elevation > 0.7:
-        return config.T_SNOW, config.SNOW_COLOR # Puncak gunung bersalju
+        # Puncak gunung tinggi selalu salju, tidak peduli suhu
+        return config.T_SNOW, config.SNOW_COLOR 
 
     # 2. Logika Bioma Utama (Iklim)
     
-    # BIOMA DINGIN (Tundra / Tanah Beku)
-    if temperature < -0.3:
+    # --- BIOMA DINGIN (Suhu < -0.2) ---
+    # Rentang sedikit diperluas dari -0.3
+    if temperature < -0.2: 
         if moisture < 0.0:
-            return config.T_STONE, config.STONE_COLOR # Dingin + Kering = Batu
+            return config.T_STONE, config.STONE_COLOR # Dingin + Kering = Batu Tundra
         else:
-            return config.T_SNOW, config.SNOW_COLOR # Dingin + Basah = Salju/Tundra
+            return config.T_SNOW, config.SNOW_COLOR # Dingin + Basah = Salju
 
-    # BIOMA PANAS (Gurun / Savana / Hutan Hujan)
-    elif temperature > 0.4:
-        if moisture < -0.2:
-            return config.T_SAND, config.SAND_COLOR # Panas + Sangat Kering = Gurun Pasir
-        elif moisture < 0.4:
+    # --- BIOMA PANAS (Suhu > 0.3) ---
+    # Rentang sedikit diperluas dari 0.4
+    elif temperature > 0.3: 
+        if moisture < -0.3:
+            return config.T_SAND, config.SAND_COLOR # Panas + Sangat Kering = Gurun
+        elif moisture < 0.3:
             return config.T_DIRT, config.DIRT_COLOR # Panas + Sedang = Savana (Tanah)
         else:
             return config.T_DEEP_GRASS, config.DEEP_GRASS_COLOR # Panas + Basah = Hutan Hujan
             
-    # BIOMA SEDANG (Padang Rumput / Hutan Gugur)
+    # --- BIOMA SEDANG (Suhu antara -0.2 dan 0.3) ---
     else:
+        # Ini adalah bioma "Temperate"
         if moisture < -0.3:
-            return config.T_DIRT, config.DIRT_COLOR # Sedang + Kering = Tanah Coklat
-        elif moisture < 0.5:
-            return config.T_GRASS, config.GRASS_COLOR # Sedang + Sedang = Padang Rumput
+            return config.T_DIRT, config.DIRT_COLOR # Sedang + Kering = Tanah
+        elif moisture > 0.6:
+            # Jika sedang tapi sangat basah, buat jadi hutan/rumput lebat
+            return config.T_DEEP_GRASS, config.DEEP_GRASS_COLOR 
         else:
-            # (Bisa tambahkan hutan gugur, tapi kita pakai rumput saja)
+            # HANYA jika sedang DAN kelembapan sedang, baru jadi rumput
+            # (Range moisture -0.3 s.d 0.6)
             return config.T_GRASS, config.GRASS_COLOR
-
-    # Fallback (seharusnya tidak terjadi)
-    return config.T_GRASS, config.GRASS_COLOR
 
 
 def generate_chunk_data_and_surface(cx, cy):
@@ -111,10 +113,6 @@ def generate_chunk_data_and_surface(cx, cy):
                 persistence=persistence,
                 lacunarity=lacunarity
             )
-
-            # --- LOGIKA PEWARNAAN LAMA DIHAPUS ---
-            # if noise_val < -0.5:
-            # ... (dst) ...
             
             # 4. Tentukan Tipe Tile berdasarkan 3 Nilai
             tile_type, tile_color = _get_biome_tile(
@@ -143,28 +141,17 @@ def render_chunk_surface_from_data(chunk_data):
     )
     
     # Gunakan mapping warna dari config
-    # (Sekarang kita ambil dari TERRAIN_PARTICLE_COLORS agar konsisten)
-    color_map = {
-        config.T_WATER: config.WATER_COLOR,
-        config.T_STONE: config.STONE_COLOR,
-        config.T_DIRT: config.DIRT_COLOR,
-        config.T_GRASS: config.GRASS_COLOR,
-        config.T_SAND: config.SAND_COLOR,
-        config.T_SNOW: config.SNOW_COLOR, # <-- BARU
-        config.T_DEEP_GRASS: config.DEEP_GRASS_COLOR, # <-- BARU
-        config.T_SCORCHED: config.SCORCHED_COLOR, # <-- BARU
-    }
+    # (Kita ambil dari TERRAIN_PARTICLE_COLORS agar konsisten)
+    color_map = config.TERRAIN_PARTICLE_COLORS
     default_color = config.GRASS_COLOR
     
     for y in range(config.CHUNK_SIZE):
         for x in range(config.CHUNK_SIZE):
             
             tile_type = chunk_data.get((x,y), config.T_GRASS)
-            # Ambil warna dari color_map, ATAU dari particle_colors, ATAU default
-            tile_color = color_map.get(
-                tile_type, 
-                config.TERRAIN_PARTICLE_COLORS.get(tile_type, default_color)
-            )
+            
+            # Ambil warna dari color_map (yang sekarang identik dengan particle_colors)
+            tile_color = color_map.get(tile_type, default_color)
             
             px = x * config.SNAKE_BLOCK
             py = y * config.SNAKE_BLOCK
