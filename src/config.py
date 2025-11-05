@@ -13,13 +13,20 @@ WORLD_HEIGHT = DIS_HEIGHT * 3
 SNAKE_BLOCK = 20
 SNAKE_SPEED = 15
 
+# --- BARU: Faktor smoothing kamera ---
+# Mengontrol seberapa "halus" kamera mengikuti.
+# Nilai lebih kecil = lebih halus/lambat (misal: 0.05)
+# Nilai lebih besar = lebih kaku/cepat (misal: 0.2)
+# Nilai 1.0 = instan (tidak ada smoothing)
+CAMERA_SMOOTHING = 1.0
+
 # --- Definisi Warna ---
 WHITE = (255, 255, 255)
+# ... (sisa file config Anda tetap sama) ...
 YELLOW = (255, 255, 102)
 BLACK = (0, 0, 0)
 BLUE = (50, 153, 213)
 
-# Warna ular tetap hijau, karena kita akan menambahkan outline
 SNAKE_COLOR = (0, 200, 0) 
 FOOD_COLOR = (213, 50, 80)
 
