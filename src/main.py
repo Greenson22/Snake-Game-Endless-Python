@@ -1,6 +1,6 @@
 import pygame
-import math  # <-- Pastikan math diimpor
-# Menggunakan impor relatif untuk semua modul kita
+import math  
+import random
 from . import config
 from . import terrain
 from . import snake
@@ -8,13 +8,12 @@ from . import food
 from . import camera
 from . import ui
 from . import enemy  
-import random
 
 class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((config.DIS_WIDTH, config.DIS_HEIGHT))
-        pygame.display.set_caption('Game Ular vs Cacing') # Judul baru!
+        pygame.display.set_caption('Game Ular vs Cacing') 
         self.clock = pygame.time.Clock()
         self.running = True
         self.game_over = False
@@ -34,7 +33,6 @@ class Game:
         self.food = food.Food()
         self.score = 0
         
-        # --- MODIFIKASI: Logika Spawn Musuh ---
         self.enemies = []
         start_x, start_y = self.snake.get_head_pos()
         
@@ -42,22 +40,17 @@ class Game:
         
         for _ in range(config.NUM_ENEMIES):
             while True:
-                # 1. Pilih posisi acak yang TERKAIT GRID
                 enemy_x = round(random.randrange(0, config.WORLD_WIDTH - config.SNAKE_BLOCK) 
                                 / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
                 enemy_y = round(random.randrange(0, config.WORLD_HEIGHT - config.SNAKE_BLOCK) 
                                 / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
                 
-                # 2. Hitung jarak dari pemain
                 dist = math.sqrt((enemy_x - start_x)**2 + (enemy_y - start_y)**2)
                 
-                # 3. Jika jarak aman, buat musuh
                 if dist > config.ENEMY_MIN_SPAWN_DIST:
-                    # Buat musuh baru di posisi grid
                     new_enemy = enemy.Enemy(enemy_x, enemy_y) 
                     self.enemies.append(new_enemy)
-                    break # Lanjut ke musuh berikutnya
-        # ---------------------------------------------
+                    break 
             
     def run(self):
         """Loop game utama."""
@@ -102,10 +95,10 @@ class Game:
         
         self.camera.update(snake_head_x, snake_head_y)
         
-        # --- MODIFIKASI: Panggil 'update' musuh ---
-        # (Fungsi 'move' sekarang dipanggil secara internal oleh 'update')
+        # --- MODIFIKASI DI SINI ---
+        # Berikan 'self.enemies' ke setiap musuh agar mereka saling 'sadar'
         for e in self.enemies:
-            e.update(snake_head_x, snake_head_y)
+            e.update(snake_head_x, snake_head_y, self.enemies)
         # -----------------------------------------
         
         # Cek tabrakan
@@ -116,7 +109,6 @@ class Game:
 
         # Cek tabrakan dengan musuh
         for e in self.enemies:
-            # check_collision sekarang memeriksa kepala pemain vs seluruh tubuh musuh
             if e.check_collision(snake_head_x, snake_head_y):
                 self.game_over = True
                 print("Game Over! Tertangkap musuh.")
@@ -135,20 +127,13 @@ class Game:
         cam_x, cam_y = self.camera.get_offset()
         snake_head_x, snake_head_y = self.snake.get_head_pos()
         
-        # 1. Gambar background
         self.screen.blit(self.background, (0 - cam_x, 0 - cam_y))
-        
-        # 2. Gambar makanan (atau panah indikator)
         self.food.draw(self.screen, self.camera, snake_head_x, snake_head_y)
         
-        # 3. Gambar musuh (sekarang menggambar seluruh tubuh)
         for e in self.enemies:
             e.draw(self.screen, cam_x, cam_y)
         
-        # 4. Gambar ular (di atas musuh)
         self.snake.draw(self.screen, cam_x, cam_y)
-        
-        # 5. Gambar UI (skor)
         ui.draw_score(self.screen, self.score)
         
         pygame.display.update()
