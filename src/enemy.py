@@ -19,7 +19,7 @@ class Enemy:
         self.y_change = 0
         
         self.move_timer = 0
-        self.move_delay = config.ENEMY_MOVE_DELAY
+        self.move_delay = config.ENEMY_MOVE_DELAY # Delay dasar
 
     def _decide_move(self, target_x, target_y):
         """AI Sederhana: Tentukan arah gerak (greedy)"""
@@ -61,22 +61,13 @@ class Enemy:
         new_head_x = self.head[0] + self.x_change
         new_head_y = self.head[1] + self.y_change
         
-        # --- BLOK TABRAKAN DINDING DIHAPUS ---
-        # (Kode yang merujuk config.WORLD_WIDTH sudah dihapus)
-        # --------------------------------------
-
-        # --- BARU: Cek tabrakan dengan musuh lain (dan diri sendiri) ---
+        # --- Cek tabrakan dengan musuh lain (dan diri sendiri) ---
         is_occupied = False
         for enemy in all_enemies:
             for segment in enemy.body:
-                # Cek jika kotak tujuan (new_head) sudah ditempati segmen musuh
                 if new_head_x == segment[0] and new_head_y == segment[1]:
-                    # Pengecualian: Boleh bergerak ke ekor diri sendiri
-                    # (jika ekor itu akan bergeser di frame ini)
-                    # Kita sederhanakan: anggap saja semua terisi.
-                    # Jika musuh ini adalah diri sendiri DAN segmen ini adalah ekor
                     if enemy == self and segment == self.body[0]:
-                        pass # Boleh, ekor akan pindah
+                        pass 
                     else:
                         is_occupied = True
                         break
@@ -84,11 +75,9 @@ class Enemy:
                 break
         
         if is_occupied:
-            # Kotak tujuan sudah terisi, batalkan gerakan
-            # Reset arah agar _decide_move bisa cari jalan lain
             self.x_change = 0
             self.y_change = 0
-            return # Batal bergerak
+            return 
         # -----------------------------------------------------------
 
         # 3. Jika lolos semua cek, baru bergerak
@@ -100,14 +89,24 @@ class Enemy:
         if len(self.body) > self.length:
             del self.body[0]
 
-    def update(self, target_x, target_y, all_enemies):
+    def update(self, target_x, target_y, all_enemies, world):
         """
         Fungsi update utama. Dipanggil setiap frame.
-        Memutuskan kapan harus bergerak.
+        Memutuskan kapan harus bergerak (DIPERBARUI DENGAN TERRAIN)
         """
+        
+        # 1. Cek terrain di kepala musuh
+        current_terrain_type = world.get_tile_type_at_world_pos(self.head[0], self.head[1])
+        
+        # 2. Dapatkan penalti kecepatan dari terrain
+        terrain_delay = config.TERRAIN_SPEEDS.get(current_terrain_type, 1)
+        
+        # 3. Hitung delay total (delay dasar * penalti terrain)
+        total_move_delay = self.move_delay * terrain_delay
+        
         self.move_timer += 1
         
-        if self.move_timer >= self.move_delay:
+        if self.move_timer >= total_move_delay:
             self.move_timer = 0
             self._decide_move(target_x, target_y) # Tentukan arah
             self._move(all_enemies) # Pindahkan tubuh (dengan cek tabrakan)

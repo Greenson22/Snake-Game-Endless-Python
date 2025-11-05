@@ -30,7 +30,7 @@ SNAKE_SPEED = 15 # Ini sekarang menjadi "tick rate" atau FPS game
 CAMERA_SMOOTHING = 1.0
 
 # --- BARU: Pengaturan Makanan ---
-MAX_FOOD_COUNT = 30 # Jumlah maksimum makanan di dunia pada satu waktu
+MAX_FOOD_COUNT = 40 # Dinaikkan dari 30
 FOOD_SCORE_BASE = 10 # Skor dasar (skor 10 = tumbuh 1 segmen)
 
 # --- Pengaturan Level & Waktu ---
@@ -99,19 +99,17 @@ T_SCORCHED = "scorched"
 
 # --- BARU: Aturan Spawn Makanan Bioma (dengan Probabilitas) ---
 # Format: TIPE_TERRAIN: (WARNA_MAKANAN, SKOR, PROBABILITAS_SPAWN)
-# Probabilitas 1.0 = 100% (jika tile dipilih)
-# Probabilitas 0.2 = 20% (jika tile dipilih)
 BIOME_FOOD_RULES = {
-    # Terrain Cepat (Spawn Jarang)
-    T_GRASS: (FOOD_APPLE_COLOR, 10, 0.2), # 20%
-    T_DEEP_GRASS: (FOOD_BERRY_COLOR, 15, 0.3), # 30%
-    T_SAND: (FOOD_CACTUS_COLOR, 20, 0.2), # 20%
+    # Terrain Cepat (Spawn Sangat Jarang)
+    T_GRASS: (FOOD_APPLE_COLOR, 10, 0.1), # 10%
+    T_DEEP_GRASS: (FOOD_BERRY_COLOR, 15, 0.15), # 15%
+    T_SAND: (FOOD_CACTUS_COLOR, 20, 0.1), # 10%
 
-    # Terrain Lambat (Spawn Sering)
-    T_DIRT: (FOOD_MUSHROOM_COLOR, 10, 0.9), # 90%
-    T_SCORCHED: (FOOD_MUSHROOM_COLOR, 15, 0.9), # 90% (Pakai jamur juga)
-    T_STONE: (FOOD_CRYSTAL_COLOR, 25, 0.8), # 80% (Skor tinggi!)
-    T_SNOW: (FOOD_ICE_BERRY_COLOR, 20, 1.0), # 100%
+    # Terrain Lambat (Spawn Sangat Sering)
+    T_DIRT: (FOOD_MUSHROOM_COLOR, 10, 0.95), # 95%
+    T_SCORCHED: (FOOD_MUSHROOM_COLOR, 15, 0.95), # 95%
+    T_STONE: (FOOD_CRYSTAL_COLOR, 25, 1.0), # 100% (Selalu spawn)
+    T_SNOW: (FOOD_ICE_BERRY_COLOR, 20, 1.0), # 100% (Selalu spawn)
     
     # Terrain Invalid
     T_WATER: None,

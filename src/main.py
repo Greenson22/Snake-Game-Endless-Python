@@ -105,13 +105,13 @@ class Game:
                 
                 # 2. Lakukan 'lemparan dadu'
                 if random.random() < spawn_chance:
-                    # Sukses! (Misal: 0.1 < 0.2 di Rumput)
+                    # Sukses! (Misal: 0.05 < 0.1 di Rumput)
                     # Buat objek Food baru dan tambahkan ke list
                     new_food = food.Food(spawn_x, spawn_y, food_color, food_score)
                     self.foods.append(new_food)
                     return # Hentikan fungsi
                 
-                # Jika gagal (Misal: 0.5 > 0.2 di Rumput),
+                # Jika gagal (Misal: 0.5 > 0.1 di Rumput),
                 # 'if' ini dilewati, dan loop 'while' berlanjut
                 # untuk mencari titik baru.
             
@@ -273,8 +273,11 @@ class Game:
         # 3. Update Kamera, Musuh, Partikel
         self.camera.update(snake_head_x, snake_head_y)
         
+        # --- PERUBAHAN DI SINI ---
         for creature in self.all_creatures:
-            creature.update(snake_head_x, snake_head_y, self.all_creatures)
+            # Berikan 'self.world' agar musuh bisa cek terrain
+            creature.update(snake_head_x, snake_head_y, self.all_creatures, self.world)
+        # ------------------------
         
         self.particles = [p for p in self.particles if p.update()]
 
@@ -290,20 +293,19 @@ class Game:
                 print(f"Game Over! Tertangkap musuh ({type(creature).__name__}).")
                 return 
 
-        # 5. Cek Makan Makanan (DIPERBARUI)
+        # 5. Cek Makan Makanan
         food_eaten = None
         for f in self.foods:
             food_x, food_y = f.get_pos()
             if snake_head_x == food_x and snake_head_y == food_y:
                 food_eaten = f
-                break # Hanya bisa makan 1 per frame
+                break 
 
         if food_eaten:
-            self.snake.grow(food_eaten.score) # Tumbuh berdasarkan skor
-            self.score += food_eaten.score # Tambah skor
-            self.foods.remove(food_eaten) # Hapus makanan dari list
+            self.snake.grow(food_eaten.score) 
+            self.score += food_eaten.score 
+            self.foods.remove(food_eaten) 
             print(f"Makan! Skor sekarang: {self.score}")
-            # (Makanan baru akan di-spawn oleh fungsi di bawah)
 
         # 6. Panggil Maintainer Makanan (BARU)
         self._maintain_food_population()
@@ -373,29 +375,27 @@ class Game:
         world_radius_blip = config.MINIMAP_VIEW_RADIUS_WORLD
         map_radius = config.MINIMAP_RADIUS_PIXELS
 
+        # --- FUNGSI HELPER 'draw_blip' (Menghilangkan blip di luar jangkauan) ---
         def draw_blip(world_x, world_y, color):
             delta_x = world_x - player_x
             delta_y = world_y - player_y
             dist = math.sqrt(delta_x**2 + delta_y**2)
             
             if dist > world_radius_blip:
-                 norm_x = delta_x / dist
-                 norm_y = delta_y / dist
-                 blip_x = map_center_x + (norm_x * map_radius)
-                 blip_y = map_center_y + (norm_y * map_radius)
-            else:
-                 norm_x = delta_x / world_radius_blip
-                 norm_y = delta_y / world_radius_blip
-                 blip_x = map_center_x + (norm_x * map_radius)
-                 blip_y = map_center_y + (norm_y * map_radius)
+                 return 
+
+            norm_x = delta_x / world_radius_blip
+            norm_y = delta_y / world_radius_blip
+            blip_x = map_center_x + (norm_x * map_radius)
+            blip_y = map_center_y + (norm_y * map_radius)
 
             blip_x = max(self.minimap_rect.left + 2, min(self.minimap_rect.right - 2, blip_x))
             blip_y = max(self.minimap_rect.top + 2, min(self.minimap_rect.bottom - 2, blip_y))
+            
             pygame.draw.rect(self.screen, color, (blip_x, blip_y, 2, 2))
 
-        # a. Gambar Makanan (DIPERBARUI)
+        # a. Gambar Makanan
         for f in self.foods:
-            # Gunakan 1 warna agar minimap bersih
             draw_blip(f.x, f.y, config.MINIMAP_FOOD_COLOR) 
         
         # b. Gambar Bom
@@ -452,15 +452,13 @@ class Game:
         if self.bomb_powerup:
             self.bomb_powerup.draw(self.screen, self.camera) 
             
-        # --- DIPERBARUI: Gambar Makanan ---
         for f in self.foods:
             f.draw(self.screen, self.camera)
         
         for creature in self.all_creatures:
             creature.draw(self.screen, cam_x, cam_y)
             
-        # --- PERBAIKAN TYPO DI SINI ---
-        self.snake.draw(self.screen, cam_x, cam_y) # Diubah dari cam_m ke cam_y
+        self.snake.draw(self.screen, cam_x, cam_y)
         
         # 3. Logika UI
         if self.game_over:

@@ -19,7 +19,8 @@ class Rusher:
         self.x_change = 0
         self.y_change = 0
         
-        # (Tidak ada move_timer, Rusher bergerak setiap frame)
+        # --- BARU: Tambahkan timer untuk kelambatan terrain ---
+        self.move_timer = 0
 
     def _decide_move(self, target_x, target_y):
         """AI Rusher: Sangat ingin lurus, jarang belok."""
@@ -64,10 +65,6 @@ class Rusher:
         new_head_x = self.head[0] + self.x_change
         new_head_y = self.head[1] + self.y_change
         
-        # --- BLOK TABRAKAN DINDING DIHAPUS ---
-        # (Kode yang merujuk config.WORLD_WIDTH sudah dihapus)
-        # --------------------------------------
-
         # 2. Cek tabrakan dengan semua musuh lain (Cacing dan Rusher)
         is_occupied = False
         for creature in all_creatures:
@@ -97,13 +94,28 @@ class Rusher:
         if len(self.body) > self.length:
             del self.body[0]
 
-    def update(self, target_x, target_y, all_creatures):
+    def update(self, target_x, target_y, all_creatures, world):
         """
-        Fungsi update Rusher. Bergerak setiap frame.
+        Fungsi update Rusher.
+        (DIPERBARUI DENGAN TERRAIN)
         """
-        # Rusher tidak punya delay
-        self._decide_move(target_x, target_y) # Tentukan (atau tidak) arah
-        self._move(all_creatures) # Selalu coba bergerak
+        # --- LOGIKA LAMA (DIHAPUS) ---
+        # self._decide_move(target_x, target_y) # Tentukan (atau tidak) arah
+        # self._move(all_creatures) # Selalu coba bergerak
+        
+        # --- LOGIKA BARU (DENGAN TERRAIN) ---
+        # 1. Cek terrain di kepala rusher
+        current_terrain_type = world.get_tile_type_at_world_pos(self.head[0], self.head[1])
+        
+        # 2. Dapatkan penalti kecepatan dari terrain (Rusher tidak punya delay dasar)
+        terrain_delay = config.TERRAIN_SPEEDS.get(current_terrain_type, 1)
+        
+        self.move_timer += 1
+        
+        if self.move_timer >= terrain_delay:
+            self.move_timer = 0
+            self._decide_move(target_x, target_y) # Tentukan (atau tidak) arah
+            self._move(all_creatures) # Coba bergerak
 
     def draw(self, surface, camera_x, camera_y):
         """Menggambar seluruh tubuh Rusher."""
