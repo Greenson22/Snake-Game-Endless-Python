@@ -8,12 +8,13 @@ from . import food
 from . import camera
 from . import ui
 from . import enemy  
+from . import rusher # <-- BARU: Impor Rusher
 
 class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((config.DIS_WIDTH, config.DIS_HEIGHT))
-        pygame.display.set_caption('Game Ular vs Cacing') 
+        pygame.display.set_caption('Game Ular vs Musuh') # Judul baru
         self.clock = pygame.time.Clock()
         self.running = True
         self.game_over = False
@@ -22,7 +23,9 @@ class Game:
             config.WORLD_WIDTH, config.WORLD_HEIGHT, config.SNAKE_BLOCK
         )
         self.camera = camera.Camera()
-        self.enemies = [] 
+        
+        # --- MODIFIKASI: Ganti nama list ---
+        self.all_creatures = [] # Akan berisi Enemy dan Rusher
         
         self.reset_game() 
 
@@ -33,24 +36,40 @@ class Game:
         self.food = food.Food()
         self.score = 0
         
-        self.enemies = []
+        # --- MODIFIKASI: Spawn kedua tipe musuh ---
+        self.all_creatures = []
         start_x, start_y = self.snake.get_head_pos()
         
-        print(f"Game dimulai! {config.NUM_ENEMIES} musuh muncul. Hati-hati!")
+        print(f"Game dimulai! {config.NUM_ENEMIES} cacing dan {config.NUM_RUSHERS} rusher muncul.")
         
+        # 1. Spawn Cacing Lambat (Enemy)
         for _ in range(config.NUM_ENEMIES):
             while True:
                 enemy_x = round(random.randrange(0, config.WORLD_WIDTH - config.SNAKE_BLOCK) 
                                 / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
                 enemy_y = round(random.randrange(0, config.WORLD_HEIGHT - config.SNAKE_BLOCK) 
                                 / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
-                
                 dist = math.sqrt((enemy_x - start_x)**2 + (enemy_y - start_y)**2)
                 
                 if dist > config.ENEMY_MIN_SPAWN_DIST:
                     new_enemy = enemy.Enemy(enemy_x, enemy_y) 
-                    self.enemies.append(new_enemy)
+                    self.all_creatures.append(new_enemy) # Tambah ke list utama
                     break 
+        
+        # 2. Spawn Rusher Cepat
+        for _ in range(config.NUM_RUSHERS):
+            while True:
+                rusher_x = round(random.randrange(0, config.WORLD_WIDTH - config.SNAKE_BLOCK) 
+                                 / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
+                rusher_y = round(random.randrange(0, config.WORLD_HEIGHT - config.SNAKE_BLOCK) 
+                                 / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
+                dist = math.sqrt((rusher_x - start_x)**2 + (rusher_y - start_y)**2)
+                
+                if dist > config.ENEMY_MIN_SPAWN_DIST:
+                    new_rusher = rusher.Rusher(rusher_x, rusher_y) 
+                    self.all_creatures.append(new_rusher) # Tambah ke list utama
+                    break
+        # ---------------------------------------------
             
     def run(self):
         """Loop game utama."""
@@ -95,10 +114,9 @@ class Game:
         
         self.camera.update(snake_head_x, snake_head_y)
         
-        # --- MODIFIKASI DI SINI ---
-        # Berikan 'self.enemies' ke setiap musuh agar mereka saling 'sadar'
-        for e in self.enemies:
-            e.update(snake_head_x, snake_head_y, self.enemies)
+        # --- MODIFIKASI: Update semua creature ---
+        for creature in self.all_creatures:
+            creature.update(snake_head_x, snake_head_y, self.all_creatures)
         # -----------------------------------------
         
         # Cek tabrakan
@@ -107,12 +125,13 @@ class Game:
             print("Game Over! Menabrak diri sendiri atau dinding.")
             return
 
-        # Cek tabrakan dengan musuh
-        for e in self.enemies:
-            if e.check_collision(snake_head_x, snake_head_y):
+        # --- MODIFIKASI: Cek tabrakan dengan semua creature ---
+        for creature in self.all_creatures:
+            if creature.check_collision(snake_head_x, snake_head_y):
                 self.game_over = True
-                print("Game Over! Tertangkap musuh.")
+                print(f"Game Over! Tertangkap musuh ({type(creature).__name__}).")
                 return 
+        # -------------------------------------
 
         # Cek makan makanan
         food_x, food_y = self.food.get_pos()
@@ -130,8 +149,10 @@ class Game:
         self.screen.blit(self.background, (0 - cam_x, 0 - cam_y))
         self.food.draw(self.screen, self.camera, snake_head_x, snake_head_y)
         
-        for e in self.enemies:
-            e.draw(self.screen, cam_x, cam_y)
+        # --- MODIFIKASI: Gambar semua creature ---
+        for creature in self.all_creatures:
+            creature.draw(self.screen, cam_x, cam_y)
+        # --------------------------
         
         self.snake.draw(self.screen, cam_x, cam_y)
         ui.draw_score(self.screen, self.score)
