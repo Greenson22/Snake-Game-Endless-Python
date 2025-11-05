@@ -1,13 +1,16 @@
 import pygame
 import random
-import math  # <-- BARU: Diperlukan untuk trigonometri (sudut)
+import math  # Diperlukan untuk trigonometri (sudut)
 from . import config
+
+# --- BARU: Definisikan radius panah ---
+ARROW_RADIUS = 50  # Jarak panah dari ular (dalam pixel)
 
 class Food:
     def __init__(self):
         self.block_size = config.SNAKE_BLOCK
         self.color = config.FOOD_COLOR
-        self.arrow_color = config.WHITE  # <-- BARU: Warna untuk panah
+        self.arrow_color = config.WHITE  # Warna untuk panah
         self.x = 0
         self.y = 0
         self.spawn() # Langsung spawn saat dibuat
@@ -21,7 +24,7 @@ class Food:
         """Mendapatkan posisi makanan (koordinat dunia)."""
         return (self.x, self.y)
 
-    # --- FUNGSI DRAW DIMODIFIKASI TOTAL ---
+    # --- FUNGSI DRAW DIMODIFIKASI ---
     def draw(self, surface, camera, snake_head_x, snake_head_y):
         """
         Menggambar makanan jika di layar, atau panah indikator jika di luar layar.
@@ -31,44 +34,35 @@ class Food:
         screen_height = camera.screen_height
 
         # Hitung posisi makanan relatif di layar
-        screen_x = self.x - cam_x
-        screen_y = self.y - cam_y
+        food_screen_x = self.x - cam_x
+        food_screen_y = self.y - cam_y
 
         # Cek apakah makanan ada di dalam layar
-        is_on_screen = (0 < screen_x < screen_width) and (0 < screen_y < screen_height)
+        is_on_screen = (0 < food_screen_x < screen_width) and (0 < food_screen_y < screen_height)
 
         if is_on_screen:
             # Jika di layar, gambar makanan seperti biasa
-            pygame.draw.rect(surface, self.color, [screen_x, screen_y, self.block_size, self.block_size])
+            pygame.draw.rect(surface, self.color, [food_screen_x, food_screen_y, self.block_size, self.block_size])
         
         else:
             # --- Jika di luar layar, gambar panah indikator ---
             
-            # 1. Hitung sudut dari ular (pemain) ke makanan
-            # Kita gunakan koordinat dunia
+            # 1. Hitung sudut dari ular (pemain) ke makanan (koordinat dunia)
             delta_x = self.x - snake_head_x
             delta_y = self.y - snake_head_y
+            angle_rad = math.atan2(-delta_y, delta_x) # -delta_y karena Y pygame terbalik
             
-            # math.atan2(y, x). Kita balik 'y' (-delta_y) karena sumbu Y pygame terbalik
-            angle_rad = math.atan2(-delta_y, delta_x)
+            # 2. Hitung posisi ular DI LAYAR (sebagai titik asal panah)
+            #    Ini diperlukan karena kamera 'smooth' dan ular tidak selalu di tengah
+            snake_screen_x = snake_head_x - cam_x
+            snake_screen_y = snake_head_y - cam_y
             
-            # 2. Tentukan posisi panah di tepi layar
-            # Kita "jepit" posisi makanan di layar, dengan sedikit margin
-            margin = 30
-            clamped_x = max(margin, min(screen_x + cam_x, screen_width - margin))
-            clamped_y = max(margin, min(screen_y + cam_y, screen_height - margin))
-            
-            # Koreksi: Jika makanan ada di atas/bawah, jepit X ke tengah. Jika di kiri/kanan, jepit Y ke tengah.
-            # Logika penjepitan yang lebih baik menggunakan sudut:
-            center_x, center_y = screen_width / 2, screen_height / 2
-            
-            # Hitung titik potong di tepi layar dari pusat
-            # Ini sedikit rumit, mari kita sederhanakan:
-            # Jepit saja posisi layar relatifnya
-            clamped_x = max(margin, min(screen_x, screen_width - margin))
-            clamped_y = max(margin, min(screen_y, screen_height - margin))
-            
-            # 3. Buat titik-titik segitiga (panah)
+            # 3. Tentukan posisi jangkar panah (titik pusat panah)
+            #    Ini adalah titik di lingkaran (radius 50px) di sekitar ular, berdasarkan sudut
+            arrow_anchor_x = snake_screen_x + math.cos(angle_rad) * ARROW_RADIUS
+            arrow_anchor_y = snake_screen_y - math.sin(angle_rad) * ARROW_RADIUS # -sin karena Y pygame terbalik
+
+            # 4. Buat titik-titik segitiga (panah) di sekitar titik (0,0)
             arrow_size = 10
             points = [
                 (arrow_size, 0),             # Ujung panah
@@ -76,20 +70,22 @@ class Food:
                 (-arrow_size, arrow_size // 2)   # Belakang kanan
             ]
 
-            # 4. Putar (rotasi) titik-titik panah sesuai sudut
+            # 5. Putar (rotasi) dan geser (translasi) titik-titik panah
             cos_a = math.cos(angle_rad)
             sin_a = math.sin(angle_rad)
             
             rotated_points = []
             for x, y in points:
-                # Rumus rotasi 2D
+                # Rumus rotasi 2D standar
                 x_rot = x * cos_a - y * sin_a
-                y_rot = x * sin_a + y * cos_a
+                y_rot = x * sin_a + y * cos_a # y_rot positif berarti 'ke atas'
                 
-                # Geser (translasi) titik ke posisi tepi layar
-                final_x = x_rot + clamped_x
-                final_y = y_rot + clamped_y
+                # Geser (translasi) ke posisi jangkar panah
+                # DAN balik sumbu Y untuk y_rot (karena +y_rot adalah 'atas' di math)
+                final_x = x_rot + arrow_anchor_x
+                final_y = -y_rot + arrow_anchor_y 
+                
                 rotated_points.append((final_x, final_y))
 
-            # 5. Gambar panah (sebagai poligon)
+            # 6. Gambar panah (sebagai poligon)
             pygame.draw.polygon(surface, self.arrow_color, rotated_points)
