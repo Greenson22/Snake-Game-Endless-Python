@@ -19,7 +19,8 @@ YELLOW = (255, 255, 102)
 BLACK = (0, 0, 0)
 BLUE = (50, 153, 213)
 
-SNAKE_COLOR = (0, 200, 0)
+# Warna ular tetap hijau, karena kita akan menambahkan outline
+SNAKE_COLOR = (0, 200, 0) 
 FOOD_COLOR = (213, 50, 80)
 
 GRASS_COLOR = (34, 139, 34)

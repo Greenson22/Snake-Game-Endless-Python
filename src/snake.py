@@ -58,11 +58,26 @@ class Snake:
         return False
 
     def draw(self, surface, camera_x, camera_y):
-        """Menggambar ular ke layar, disesuaikan dengan kamera."""
+        """Menggambar ular ke layar, disesuaikan dengan kamera (dengan outline)."""
+        
+        # Tentukan warna outline dan seberapa tebal (misal: 2 pixel)
+        outline_color = config.BLACK
+        border_size = 2 
+        
+        # Ukuran untuk kotak bagian dalam (warna ular)
+        inner_size = self.block_size - (border_size * 2) 
+
         for segment in self.body:
             screen_x = segment[0] - camera_x
             screen_y = segment[1] - camera_y
-            pygame.draw.rect(surface, self.color, [screen_x, screen_y, self.block_size, self.block_size])
+            
+            # 1. Gambar kotak outline (hitam) seukuran penuh
+            pygame.draw.rect(surface, outline_color, [screen_x, screen_y, self.block_size, self.block_size])
+            
+            # 2. Gambar kotak warna ular (hijau) yang lebih kecil di tengah
+            inner_x = screen_x + border_size
+            inner_y = screen_y + border_size
+            pygame.draw.rect(surface, self.color, [inner_x, inner_y, inner_size, inner_size])
 
     def get_head_pos(self):
         """Mendapatkan posisi kepala ular (koordinat dunia)."""

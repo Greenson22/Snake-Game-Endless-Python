@@ -92,11 +92,17 @@ class Game:
         """Menggambar semua elemen game ke layar."""
         cam_x, cam_y = self.camera.get_offset()
         
+        # Dapatkan posisi kepala ular (koordinat dunia)
+        snake_head_x, snake_head_y = self.snake.get_head_pos()
+        
         # 1. Gambar background (digeser oleh kamera)
         self.screen.blit(self.background, (0 - cam_x, 0 - cam_y))
         
-        # 2. Gambar makanan (digeser oleh kamera)
-        self.food.draw(self.screen, cam_x, cam_y)
+        # --- MODIFIKASI DI SINI ---
+        # 2. Gambar makanan (atau panah indikator)
+        # Kita berikan: surface, seluruh objek kamera, dan posisi kepala ular
+        self.food.draw(self.screen, self.camera, snake_head_x, snake_head_y)
+        # --- SELESAI MODIFIKASI ---
         
         # 3. Gambar ular (digeser oleh kamera)
         self.snake.draw(self.screen, cam_x, cam_y)
