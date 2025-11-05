@@ -2,15 +2,16 @@ import pygame
 import math  
 import random
 from . import config
-from . import terrain
+# from . import terrain (Tidak perlu impor terrain lagi di main)
 from . import snake
 from . import food
 from . import camera
 from . import ui
 from . import enemy  
 from . import rusher 
-from . import bomb      # Impor file bom
-from . import particle  # Impor file partikel
+from . import bomb
+from . import particle
+from . import world # <-- IMPOR BARU: ChunkManager
 
 class Game:
     def __init__(self):
@@ -21,61 +22,57 @@ class Game:
         self.running = True
         self.game_over = False
         
-        # Tangkap grid data terrain
-        self.background, self.terrain_grid = terrain.create_terrain_background(
-            config.WORLD_WIDTH, config.WORLD_HEIGHT, config.SNAKE_BLOCK
-        )
+        # --- LOGIKA BACKGROUND LAMA DIHAPUS ---
+        
+        # --- LOGIKA BARU: ChunkManager ---
+        self.world = world.ChunkManager()
+        # -----------------------------------
+        
         self.camera = camera.Camera()
         
         self.all_creatures = [] 
-        self.particles = [] # Daftar untuk menampung partikel
+        self.particles = [] 
         
-        # --- BARU: Inisialisasi Minimap ---
-        self.minimap_width = config.MINIMAP_WIDTH
-        self.minimap_height = config.MINIMAP_HEIGHT
-        
-        # Buat gambar latar statis untuk minimap (hanya sekali)
-        self.minimap_background = pygame.transform.scale(
-            self.background, (self.minimap_width, self.minimap_height)
-        )
-        
-        # Simpan rasio untuk konversi koordinat
-        self.minimap_x_ratio = self.minimap_width / config.WORLD_WIDTH
-        self.minimap_y_ratio = self.minimap_height / config.WORLD_HEIGHT
-        
-        # Simpan posisi layar
-        self.minimap_x = config.MINIMAP_X_POS
-        self.minimap_y = config.MINIMAP_Y_POS
-        # ---------------------------------
+        # --- LOGIKA MINIMAP LAMA DIHAPUS ---
         
         self.reset_game() 
 
     def spawn_new_creature(self, creature_class):
-        """Helper untuk spawn satu musuh (Enemy atau Rusher)"""
+        """Helper untuk spawn satu musuh (Relatif terhadap pemain)"""
         start_x, start_y = self.snake.get_head_pos()
         
-        while True:
-            spawn_x = round(random.randrange(0, config.WORLD_WIDTH - config.SNAKE_BLOCK) 
-                            / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
-            spawn_y = round(random.randrange(0, config.WORLD_HEIGHT - config.SNAKE_BLOCK) 
-                            / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
-            dist = math.sqrt((spawn_x - start_x)**2 + (spawn_y - start_y)**2)
+        # Coba spawn di area "kotak" di sekitar pemain (di luar layar)
+        spawn_x = start_x + random.randint(int(config.DIS_WIDTH * 0.6), config.DIS_WIDTH)
+        spawn_x = spawn_x if random.random() < 0.5 else -spawn_x
+        
+        spawn_y = start_y + random.randint(int(config.DIS_HEIGHT * 0.6), config.DIS_HEIGHT)
+        spawn_y = spawn_y if random.random() < 0.5 else -spawn_y
+
+        # Bulatkan ke grid
+        spawn_x = round(spawn_x / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
+        spawn_y = round(spawn_y / config.SNAKE_BLOCK) * config.SNAKE_BLOCK
             
-            if dist > config.ENEMY_MIN_SPAWN_DIST:
-                new_creature = creature_class(spawn_x, spawn_y)
-                
-                # Terapkan delay musuh saat ini jika itu Cacing
-                if isinstance(new_creature, enemy.Enemy):
-                    new_creature.move_delay = self.current_enemy_delay
-                    
-                self.all_creatures.append(new_creature) 
-                break 
+        # Cek jarak MINIMUM (tetap berguna)
+        dist = math.sqrt((spawn_x - start_x)**2 + (spawn_y - start_y)**2)
+        
+        if dist > config.ENEMY_MIN_SPAWN_DIST:
+            new_creature = creature_class(spawn_x, spawn_y)
+            if isinstance(new_creature, enemy.Enemy):
+                new_creature.move_delay = self.current_enemy_delay
+            self.all_creatures.append(new_creature) 
+        else:
+            # Gagal spawn (terlalu dekat), coba lagi di frame berikutnya
+            pass
 
     def reset_game(self):
         """Mengatur ulang game ke status awal."""
         self.game_over = False
-        self.snake = snake.Snake(config.WORLD_WIDTH / 2, config.WORLD_HEIGHT / 2)
+        
+        # Mulai ular di pusat dunia (0, 0)
+        self.snake = snake.Snake(0, 0)
         self.food = food.Food()
+        self.food.spawn(0, 0) # Spawn makanan pertama di dekat pemain
+        
         self.score = 0
         
         # Pengaturan Level dan Waktu
@@ -94,15 +91,15 @@ class Game:
         # Timer untuk gerakan ular berbasis terrain
         self.snake_move_timer = 0
         
-        # Spawn musuh awal
+        # Kosongkan entitas
         self.all_creatures = []
-        self.particles = [] # Kosongkan partikel saat reset
+        self.particles = [] 
         
         print(f"Game dimulai! Level {self.level}")
         
+        # Spawn musuh awal di dekat pemain
         for _ in range(config.NUM_ENEMIES):
             self.spawn_new_creature(enemy.Enemy)
-        
         for _ in range(config.NUM_RUSHERS):
             self.spawn_new_creature(rusher.Rusher)
             
@@ -135,10 +132,13 @@ class Game:
                 self.handle_game_over_events()
             else:
                 self.handle_events()
-                self.update() # Logika update (termasuk waktu)
+                self.update()
             
             self.draw() 
-            self.clock.tick(config.SNAKE_SPEED) # Game tick rate
+            self.clock.tick(config.SNAKE_SPEED)
+        
+        # --- BARU: Simpan dunia saat keluar ---
+        self.world.save_world()
         
         pygame.quit()
         quit()
@@ -173,11 +173,12 @@ class Game:
             self.next_level_time += config.LEVEL_UP_TIME
             print(f"Naik Level! Selamat datang di Level {self.level}")
             
-            # Tingkatkan Kesulitan:
+            # Tingkatkan Kesulitan: Spawn musuh baru
             self.spawn_new_creature(enemy.Enemy)
             if self.level % config.RUSHER_SPAWN_PER_LEVEL == 0:
                 self.spawn_new_creature(rusher.Rusher)
             
+            # Percepat musuh yang ada
             new_delay = max(1, int(self.current_enemy_delay * config.ENEMY_SPEED_INCREASE))
             if new_delay < self.current_enemy_delay:
                 self.current_enemy_delay = new_delay
@@ -186,35 +187,34 @@ class Game:
                     if isinstance(creature, enemy.Enemy):
                         creature.move_delay = self.current_enemy_delay
 
-        # 2. Update Gerakan Ular (berbasis Terrain)
+        # 2. Update Gerakan Ular
         self.snake_move_timer += 1
         
         snake_head_x, snake_head_y = self.snake.get_head_pos()
-        grid_x = int(snake_head_x // config.SNAKE_BLOCK)
-        grid_y = int(snake_head_y // config.SNAKE_BLOCK)
         
-        current_terrain_type = self.terrain_grid.get((grid_x, grid_y), config.T_GRASS)
+        # --- MODIFIKASI: Ambil tipe tile dari World ---
+        current_terrain_type = self.world.get_tile_type_at_world_pos(
+            snake_head_x, snake_head_y
+        )
+        
         move_delay = config.TERRAIN_SPEEDS.get(current_terrain_type, 1)
         
         if self.snake_move_timer >= move_delay:
             self.snake_move_timer = 0
             self.snake.move()
             
-            # Spawn Partikel saat Ular Bergerak
+            # (Logika partikel tetap sama)
             part_color = config.TERRAIN_PARTICLE_COLORS.get(
                 current_terrain_type, config.GRASS_COLOR
             )
-            
             new_head_x, new_head_y = self.snake.get_head_pos()
-            
-            for _ in range(3): # Spawn 3 partikel
+            for _ in range(3):
                 self.particles.append(particle.Particle(
-                    new_head_x + config.SNAKE_BLOCK // 2, # Tengah blok
-                    new_head_y + config.SNAKE_BLOCK // 2, # Tengah blok
+                    new_head_x + config.SNAKE_BLOCK // 2,
+                    new_head_y + config.SNAKE_BLOCK // 2,
                     part_color
                 ))
         
-        # Ambil posisi kepala lagi (setelah kemungkinan bergerak)
         snake_head_x, snake_head_y = self.snake.get_head_pos()
         
         # 3. Update Kamera, Musuh, dan Partikel
@@ -223,30 +223,35 @@ class Game:
         for creature in self.all_creatures:
             creature.update(snake_head_x, snake_head_y, self.all_creatures)
         
-        # Update semua partikel (dan hapus yang mati)
         self.particles = [p for p in self.particles if p.update()]
 
-        # 4. Cek Tabrakan (Game Over)
-        if self.snake.check_collision_self() or self.snake.check_collision_walls():
+        # 4. Cek Tabrakan
+        # --- MODIFIKASI: Hapus tabrakan dinding ---
+        if self.snake.check_collision_self():
             self.game_over = True
+            print("Game Over! Menabrak diri sendiri.")
             return
 
         for creature in self.all_creatures:
             if creature.check_collision(snake_head_x, snake_head_y):
                 self.game_over = True
+                print(f"Game Over! Tertangkap musuh ({type(creature).__name__}).")
                 return 
 
         # 5. Cek Makan Makanan
         food_x, food_y = self.food.get_pos()
         if snake_head_x == food_x and snake_head_y == food_y:
             self.snake.grow()
-            self.food.spawn()
+            # Spawn makanan baru di dekat pemain
+            self.food.spawn(snake_head_x, snake_head_y)
             self.score = self.snake.length - 1
+            print(f"Makan! Skor sekarang: {self.score}")
 
         # 6. Logika Power-up Bom
         if self.bomb_powerup is None:
             if (self.game_time - self.last_bomb_spawn_time) >= config.BOMB_SPAWN_TIME:
-                self.bomb_powerup = bomb.Bomb()
+                # Spawn bom baru di dekat pemain
+                self.bomb_powerup = bomb.Bomb(snake_head_x, snake_head_y)
                 self.last_bomb_spawn_time = self.game_time
                 print("Power-up Bom muncul!")
         
@@ -257,98 +262,80 @@ class Game:
                 self.bomb_powerup = None
                 self.last_bomb_spawn_time = self.game_time 
 
-    # --- FUNGSI BARU: Konversi koordinat ---
-    def _world_to_minimap(self, world_x, world_y):
-        """Mengkonversi koordinat dunia ke koordinat layar di dalam minimap."""
-        # Hitung posisi lokal di dalam minimap
-        local_x = int(world_x * self.minimap_x_ratio)
-        local_y = int(world_y * self.minimap_y_ratio)
-        
-        # Tambahkan offset layar minimap
-        return (self.minimap_x + local_x, self.minimap_y + local_y)
+    # --- FUNGSI MINIMAP LAMA DIHAPUS ---
 
-    # --- FUNGSI BARU: Menggambar minimap ---
-    def _draw_minimap(self):
-        """Menggambar background minimap dan semua blip entitas."""
-        
-        # 1. Gambar background minimap yang sudah di-scale
-        self.screen.blit(self.minimap_background, (self.minimap_x, self.minimap_y))
-        
-        # 2. Gambar blip (titik) untuk entitas
-        blip_size = (config.MINIMAP_BLIP_SIZE, config.MINIMAP_BLIP_SIZE)
-        
-        # a. Makanan
-        food_pos = self._world_to_minimap(self.food.x, self.food.y)
-        pygame.draw.rect(self.screen, config.MINIMAP_FOOD_COLOR, (food_pos, blip_size))
-        
-        # b. Bom
-        if self.bomb_powerup:
-            bomb_pos = self._world_to_minimap(self.bomb_powerup.x, self.bomb_powerup.y)
-            pygame.draw.rect(self.screen, config.MINIMAP_BOMB_COLOR, (bomb_pos, blip_size))
-
-        # c. Musuh (Cacing dan Rusher)
-        for creature in self.all_creatures:
-            creature_pos = self._world_to_minimap(creature.head[0], creature.head[1])
-            # Tentukan warna blip berdasarkan tipe musuh
-            color = config.MINIMAP_ENEMY_COLOR
-            if isinstance(creature, rusher.Rusher):
-                color = config.MINIMAP_RUSHER_COLOR
-            pygame.draw.rect(self.screen, color, (creature_pos, blip_size))
-            
-        # d. Pemain (Ular) - Gambar terakhir agar di atas
-        player_pos = self._world_to_minimap(self.snake.head[0], self.snake.head[1])
-        pygame.draw.rect(self.screen, config.MINIMAP_PLAYER_COLOR, (player_pos, blip_size))
-
-        # 3. Gambar border/bingkai minimap
-        pygame.draw.rect(
-            self.screen, 
-            config.WHITE, # Warna border
-            (self.minimap_x, self.minimap_y, self.minimap_width, self.minimap_height),
-            config.MINIMAP_BORDER_WIDTH
-        )
-
+    # --- MODIFIKASI TOTAL: Fungsi draw ---
     def draw(self):
         """
         Menggambar semua elemen game ke layar.
         """
-        cam_x, cam_y = self.camera.get_offset()
+        cam_x_f, cam_y_f = self.camera.x, self.camera.y
+        cam_x, cam_y = int(cam_x_f), int(cam_y_f)
+        
+        # 1. Gambar Dunia (Chunk)
+        self.screen.fill(config.BLACK) # Latar belakang default
+        
+        chunk_size_pixels = config.CHUNK_SIZE * config.SNAKE_BLOCK
+        
+        # Hitung koordinat chunk di pojok kiri atas kamera
+        start_cx, start_cy = self.world.get_chunk_coords_from_world_pos(
+            cam_x_f, cam_y_f
+        )
+        
+        # Hitung berapa banyak chunk yang muat di layar
+        num_chunks_x = int(config.DIS_WIDTH / chunk_size_pixels) + 2
+        num_chunks_y = int(config.DIS_HEIGHT / chunk_size_pixels) + 2
+        
+        # Loop dari kiri atas ke kanan bawah layar
+        for y in range(num_chunks_y):
+            for x in range(num_chunks_x):
+                chunk_to_draw_x = start_cx + x
+                chunk_to_draw_y = start_cy + y
+                
+                # Ambil (atau buat) surface chunk
+                chunk_surface = self.world.get_or_generate_chunk_surface(
+                    chunk_to_draw_x, chunk_to_draw_y
+                )
+                
+                # Hitung posisi pixel dunia chunk ini
+                world_px = chunk_to_draw_x * chunk_size_pixels
+                world_py = chunk_to_draw_y * chunk_size_pixels
+                
+                # Hitung posisi layar (setelah digeser kamera)
+                screen_px = world_px - cam_x
+                screen_py = world_py - cam_y
+                
+                # Gambar chunk ke layar
+                self.screen.blit(chunk_surface, (screen_px, screen_py))
+
+        # 2. Gambar Entitas (Partikel, Bom, Makanan, Musuh, Ular)
         snake_head_x, snake_head_y = self.snake.get_head_pos()
         
-        # 1. Gambar semua elemen game
-        self.screen.blit(self.background, (0 - cam_x, 0 - cam_y))
-        
-        # Gambar Partikel
         for p in self.particles:
             p.draw(self.screen, cam_x, cam_y)
 
-        # Gambar Bom (jika ada)
         if self.bomb_powerup:
             self.bomb_powerup.draw(self.screen, self.camera) 
             
-        # Gambar Makanan (dengan panah)
         self.food.draw(self.screen, self.camera, snake_head_x, snake_head_y)
         
         for creature in self.all_creatures:
             creature.draw(self.screen, cam_x, cam_y)
         self.snake.draw(self.screen, cam_x, cam_y)
         
-        # 2. Logika UI
+        # 3. Logika UI
         if self.game_over:
-            # UI Game Over (skor, level, waktu)
             ui.draw_game_over_overlay(
                 self.screen, self.score, self.level, self.game_time
             )
         else:
-            # UI Saat bermain (Skor, Waktu, Level)
             ui.draw_score(self.screen, self.score)
             ui.draw_game_stats(self.screen, self.game_time, self.level)
             
-            # Panggil fungsi gambar minimap
-            self._draw_minimap()
+            # Panggilan _draw_minimap() dihapus
         
-        # 3. Update layar
+        # 4. Update layar
         pygame.display.update()
-
 
 # --- Titik Masuk Program ---
 if __name__ == "__main__":

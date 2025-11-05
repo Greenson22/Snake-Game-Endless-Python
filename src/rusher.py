@@ -64,12 +64,9 @@ class Rusher:
         new_head_x = self.head[0] + self.x_change
         new_head_y = self.head[1] + self.y_change
         
-        # 1. Cek tabrakan dinding dunia
-        if (new_head_x >= config.WORLD_WIDTH or new_head_x < 0 or
-            new_head_y >= config.WORLD_HEIGHT or new_head_y < 0):
-            self.x_change = 0 # Berhenti
-            self.y_change = 0 # Akan memaksa _decide_move di frame berikutnya
-            return 
+        # --- BLOK TABRAKAN DINDING DIHAPUS ---
+        # (Kode yang merujuk config.WORLD_WIDTH sudah dihapus)
+        # --------------------------------------
 
         # 2. Cek tabrakan dengan semua musuh lain (Cacing dan Rusher)
         is_occupied = False

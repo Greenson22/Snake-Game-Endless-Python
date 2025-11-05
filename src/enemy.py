@@ -55,19 +55,15 @@ class Enemy:
                 self.x_change = ideal_x_change
                 self.y_change = ideal_y_change
 
-    # --- MODIFIKASI: _move() sekarang butuh 'all_enemies' ---
     def _move(self, all_enemies):
         """Perbarui posisi tubuh dengan cek tabrakan musuh."""
         
         new_head_x = self.head[0] + self.x_change
         new_head_y = self.head[1] + self.y_change
         
-        # 1. Cek tabrakan dinding dunia
-        if (new_head_x >= config.WORLD_WIDTH or new_head_x < 0 or
-            new_head_y >= config.WORLD_HEIGHT or new_head_y < 0):
-            self.x_change = 0
-            self.y_change = 0
-            return # Batal bergerak
+        # --- BLOK TABRAKAN DINDING DIHAPUS ---
+        # (Kode yang merujuk config.WORLD_WIDTH sudah dihapus)
+        # --------------------------------------
 
         # --- BARU: Cek tabrakan dengan musuh lain (dan diri sendiri) ---
         is_occupied = False
@@ -104,7 +100,6 @@ class Enemy:
         if len(self.body) > self.length:
             del self.body[0]
 
-    # --- MODIFIKASI: update() sekarang menerima 'all_enemies' ---
     def update(self, target_x, target_y, all_enemies):
         """
         Fungsi update utama. Dipanggil setiap frame.

@@ -1,68 +1,107 @@
+# src/terrain.py
 import pygame
 import noise
 import random
-# Menggunakan impor relatif dari dalam paket 'src'
 from . import config 
 
-def create_terrain_background(width, height, block_size):
+# --- PENGATURAN NOISE (tetap) ---
+SCALE = 0.05 
+OCTAVES = 6
+PERSISTENCE = 0.5
+LACUNARITY = 2.0
+BASE = random.randint(0, 1000)
+
+def generate_chunk_data_and_surface(cx, cy):
     """
-    Membuat Surface background DAN data grid terrain.
+    Membuat data terrain DAN surface untuk SATU chunk.
+    cx, cy = koordinat chunk (misal: 0, 1)
     """
-    background_surface = pygame.Surface((width, height))
     
-    # Simpan data grid di sini
-    terrain_grid = {}
+    # Buat grid data lokal untuk chunk ini
+    terrain_data = {}
     
-    num_tiles_x = width // block_size
-    num_tiles_y = height // block_size
+    # Buat surface lokal untuk chunk ini
+    chunk_surface = pygame.Surface(
+        (config.CHUNK_SIZE * config.SNAKE_BLOCK, 
+         config.CHUNK_SIZE * config.SNAKE_BLOCK)
+    )
     
-    SCALE = 0.05 
-    OCTAVES = 6
-    PERSISTENCE = 0.5
-    LACUNARITY = 2.0
-    BASE = random.randint(0, 1000)
+    # Hitung offset pixel dunia dari chunk ini
+    world_offset_x = cx * config.CHUNK_SIZE
+    world_offset_y = cy * config.CHUNK_SIZE
     
-    print("Generating large terrain map...")
-    
-    for y in range(num_tiles_y):
-        for x in range(num_tiles_x):
+    for y in range(config.CHUNK_SIZE):
+        for x in range(config.CHUNK_SIZE):
+            
+            # --- PENTING: Hitung koordinat GLOBAL ---
+            # Ini memastikan noise-nya nyambung antar chunk
+            global_x = world_offset_x + x
+            global_y = world_offset_y + y
+            
+            # Ambil nilai noise Pnoise
             noise_val = noise.pnoise2(
-                (x * SCALE) + BASE, 
-                (y * SCALE) + BASE,
+                (global_x * SCALE) + BASE, 
+                (global_y * SCALE) + BASE,
                 octaves=OCTAVES,
                 persistence=PERSISTENCE,
                 lacunarity=LACUNARITY
             )
             
-            # --- MODIFIKASI: Menambahkan rentang untuk Air ---
-            # Air akan ada di dataran terendah (nilai noise terendah)
-            
-            if noise_val < -0.5:  # Paling rendah: Air
+            # Logika pewarnaan (sama seperti sebelumnya)
+            if noise_val < -0.5:
                 tile_color = config.WATER_COLOR
                 tile_type = config.T_WATER
-            elif noise_val < -0.3: # Sedikit lebih tinggi: Stone
+            elif noise_val < -0.3:
                 tile_color = config.STONE_COLOR
                 tile_type = config.T_STONE
-            elif noise_val < -0.0: # Transisi: Dirt
+            elif noise_val < -0.0:
                 tile_color = config.DIRT_COLOR
                 tile_type = config.T_DIRT
-            elif noise_val < 0.6:  # Dominan: Rumput
+            elif noise_val < 0.6:
                 tile_color = config.GRASS_COLOR
                 tile_type = config.T_GRASS
-            else: # Dataran tinggi: Pasir
+            else:
                 tile_color = config.SAND_COLOR
                 tile_type = config.T_SAND
-            # -------------------------------------------------
             
-            # Simpan tipe data ke grid
-            terrain_grid[(x, y)] = tile_type
+            # 1. Simpan tipe data ke grid LOKAL
+            terrain_data[(x, y)] = tile_type
             
-            # Gambar ke surface
-            px = x * block_size
-            py = y * block_size
-            pygame.draw.rect(background_surface, tile_color, [px, py, block_size, block_size])
+            # 2. Gambar ke surface LOKAL
+            px = x * config.SNAKE_BLOCK
+            py = y * config.SNAKE_BLOCK
+            pygame.draw.rect(chunk_surface, tile_color, [px, py, config.SNAKE_BLOCK, config.SNAKE_BLOCK])
             
-    print("Terrain map generated.")
-    
     # Kembalikan KEDUA-nya
-    return background_surface, terrain_grid
+    return terrain_data, chunk_surface
+
+def render_chunk_surface_from_data(chunk_data):
+    """
+    Membuat ulang Surface chunk dari data (misal: setelah load game).
+    """
+    chunk_surface = pygame.Surface(
+        (config.CHUNK_SIZE * config.SNAKE_BLOCK, 
+         config.CHUNK_SIZE * config.SNAKE_BLOCK)
+    )
+    
+    # Gunakan mapping warna dari config
+    color_map = {
+        config.T_WATER: config.WATER_COLOR,
+        config.T_STONE: config.STONE_COLOR,
+        config.T_DIRT: config.DIRT_COLOR,
+        config.T_GRASS: config.GRASS_COLOR,
+        config.T_SAND: config.SAND_COLOR,
+    }
+    default_color = config.GRASS_COLOR
+    
+    for y in range(config.CHUNK_SIZE):
+        for x in range(config.CHUNK_SIZE):
+            
+            tile_type = chunk_data.get((x,y), config.T_GRASS)
+            tile_color = color_map.get(tile_type, default_color)
+            
+            px = x * config.SNAKE_BLOCK
+            py = y * config.SNAKE_BLOCK
+            pygame.draw.rect(chunk_surface, tile_color, [px, py, config.SNAKE_BLOCK, config.SNAKE_BLOCK])
+            
+    return chunk_surface

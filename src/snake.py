@@ -30,11 +30,7 @@ class Snake:
         """Memperbarui posisi ular."""
         self.head[0] += self.x_change
         self.head[1] += self.y_change
-
-        # Tambahkan kepala baru ke tubuh
-        self.body.append(list(self.head)) # Salin list kepala
-        
-        # Hapus ekor jika ular tidak bertambah panjang
+        self.body.append(list(self.head))
         if len(self.body) > self.length:
             del self.body[0]
 
@@ -44,37 +40,25 @@ class Snake:
 
     def check_collision_self(self):
         """Memeriksa apakah ular menabrak dirinya sendiri."""
-        # Periksa jika kepala ada di segmen tubuh lainnya
         for segment in self.body[:-1]:
             if segment == self.head:
                 return True
         return False
 
-    def check_collision_walls(self):
-        """Memeriksa tabrakan dengan batas dunia."""
-        if (self.head[0] >= config.WORLD_WIDTH or self.head[0] < 0 or
-            self.head[1] >= config.WORLD_HEIGHT or self.head[1] < 0):
-            return True
-        return False
+    # --- FUNGSI INI DIHAPUS ---
+    # def check_collision_walls(self):
+    #     ...
 
     def draw(self, surface, camera_x, camera_y):
         """Menggambar ular ke layar, disesuaikan dengan kamera (dengan outline)."""
-        
-        # Tentukan warna outline dan seberapa tebal (misal: 2 pixel)
         outline_color = config.BLACK
         border_size = 2 
-        
-        # Ukuran untuk kotak bagian dalam (warna ular)
         inner_size = self.block_size - (border_size * 2) 
 
         for segment in self.body:
             screen_x = segment[0] - camera_x
             screen_y = segment[1] - camera_y
-            
-            # 1. Gambar kotak outline (hitam) seukuran penuh
             pygame.draw.rect(surface, outline_color, [screen_x, screen_y, self.block_size, self.block_size])
-            
-            # 2. Gambar kotak warna ular (hijau) yang lebih kecil di tengah
             inner_x = screen_x + border_size
             inner_y = screen_y + border_size
             pygame.draw.rect(surface, self.color, [inner_x, inner_y, inner_size, inner_size])
